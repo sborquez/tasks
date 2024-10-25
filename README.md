@@ -1,93 +1,279 @@
-# Workflows
+
+# **Workflows - Automated Git and GitLab Workflow Orchestration**
+
+This project, named **Workflows**, implements automated workflows using **Python** and **Prefect**. The workflows are designed to handle various Git and GitLab operations such as pushing features, creating pull requests, and interacting with **PlusCoder**. These workflows run as **Cloud Run Jobs** on Google Cloud, triggered dynamically via **Google Cloud Pub/Sub** and a **Cloud Function**, with infrastructure managed using **Terraform**.
+
+---
+
+## **Project Structure**
+
+```plaintext
+Workflows/
+├── workflows/               # Workflow definitions
+│   ├── tasks/               # Individual task definitions
+│   │   ├── git.py
+│   │   ├── utility.py
+│   │   ├── gitlab.py
+│   │   └── pluscoder.py
+│   ├── hello_world.py
+│   ├── push_feature.py
+│   └── resolve_issue.py
+├── infrastructure/          # Terraform files for infrastructure
+│   ├── main.tf
+│   ├── variables.tf
+│   └── outputs.tf
+├── tests/                   # Unit tests for workflows
+├── Makefile                 # Makefile for deployment instructions
+├── Dockerfile               # Dockerfile for Cloud Run Job
+├── requirements.txt         # Python dependencies
+├── main.py                  # Entry point for Prefect workflows
+├── pubsub_function/         # Cloud Function to trigger Cloud Run Jobs
+│   └── main.py              # Cloud Function code
+└── README.md                # Project documentation
+```
+
+---
+
+## **Installation**
+
+To set up the project environment and install dependencies, follow these steps:
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/your-username/workflows.git
+   cd workflows
+   ```
+
+2. Create a conda environment and install dependencies:
+   ```
+   make create-env
+   ```
+
+   This command creates a conda environment named 'workflows-env' and installs all necessary dependencies.
+
+3. Activate the conda environment:
+   ```
+   conda activate workflows-env
+   ```
+
+## **Development**
+
+### Features Status
+
+- [x] **git tasks**: Tasks for cloning repositories, creating branches, and pushing changes.
+- [x] **utility tasks**: Utility tasks for notifications and logging.
+- [x] **hello_world**: Simple workflow to clone a repository, create a new branch, and push changes.
+- [ ] **Cloud Infrastructure**: Set up Cloud Run Jobs, Pub/Sub, and Cloud Function for workflow orchestration with Terraform.
+- [ ] **Cloud Function Trigger**: Listen to Pub/Sub messages and trigger Cloud Run Jobs with extra arguments.
+- [ ] **Dockers Deployment**: Build and push Docker images for workflows.
+- [ ] **pluscoder tasks**: Interact with PlusCoder for specific development tasks.
+- [ ] **push_feature**: Automate the process of cloning a repository, creating a new feature branch, adding changes, and pushing to the branch.
+- [ ] **resolve_issue**: Automate resolving a GitLab issue, including pushing a branch with changes, creating a merge request, and notifying completion.
 
 
+### Running Tests
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
+To run the test suite:
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/codematos/workflows.git
-git branch -M main
-git push -uf origin main
+make test
 ```
 
-## Integrate with your tools
+### Code Formatting
 
-- [ ] [Set up project integrations](https://gitlab.com/codematos/workflows/-/settings/integrations)
+To format the code using ruff:
 
-## Collaborate with your team
+```
+make format
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+---
 
-## Test and Deploy
+## **Workflows Overview**
 
-Use the built-in continuous integration in GitLab.
+The project includes two key workflows, defined using **Prefect**:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+1. **hello_world**: A simple workflow that clone a repository, creates a new branch called `hello-world`, and pushes changes to the branch.
+2. **push_feature**: Automates the process of cloning a repository, creating a new feature branch, adding (PlusCoder) and pushing changes, and notifying completion.
+3. **resolve_issue**: Automates resolving a GitLab issue. including, pushing a branch with the changes, creating a merge request, and notifying completion.
 
-***
+### **Task Overview**
 
-# Editing this README
+- **git.py**: Contains tasks for cloning repositories, creating branches, and pushing changes.
+- **utility.py**: Contains utility tasks such as notifications and logging.
+- **gitlab.py**: Handles interactions with GitLab, such as creating pull requests.
+- **pluscoder.py**: Interacts with PlusCoder for specific development tasks.
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+---
 
-## Suggestions for a good README
+## **Cloud Infrastructure**
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+This project runs workflows as **Cloud Run Jobs**, triggered by **Pub/Sub** messages, which are sent to a **Cloud Function**. The infrastructure is managed using **Terraform**.
 
-## Name
-Choose a self-explaining name for your project.
+### **Key Components**:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+- **Cloud Run Jobs**: Executes Prefect workflows packaged in Docker. Each Cloud Run Job is created with a specific workflow defined at the creation phase.
+- **Google Cloud Pub/Sub**: Used to publish messages that trigger workflows with extra arguments.
+- **Cloud Function**: Listens to Pub/Sub and triggers the specific Cloud Run Job, passing extra arguments (e.g., repository details, feature name).
+- **Terraform**: Manages infrastructure as code, deploying Pub/Sub topics, Cloud Functions, and Cloud Run Jobs.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+---
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## **Cloud Function Trigger**
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+The **Google Cloud Function** listens for messages published to a **Google Cloud Pub/Sub** topic. Upon receiving a message, the Cloud Function triggers the pre-defined **Cloud Run Job** for the workflow (set during job creation), passing any extra arguments specified in the Pub/Sub message.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### **Cloud Function Logic**:
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+1. The workflow is **already defined** during the job creation phase and is not passed in the Pub/Sub message.
+2. The Pub/Sub message contains **only extra arguments** (e.g., feature name, branch name) for the workflow.
+3. The Cloud Function uses the **Google Cloud Run API** to trigger the pre-configured Cloud Run Job, passing the extra arguments.
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+#### **Cloud Function Code (pubsub_function/main.py)**
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```python
+import base64
+import json
+import os
+from googleapiclient.discovery import build
+from google.oauth2 import service_account
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+def trigger_workflow(event, context):
+    """Triggered from a message on a Cloud Pub/Sub topic."""
+    pubsub_message = base64.b64decode(event['data']).decode('utf-8')
+    message_data = json.loads(pubsub_message)
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+    job_name = message_data.get('job_name')
+    args = message_data.get('args', [])
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+    if not job_name:
+        print("No job_name provided in the Pub/Sub message.")
+        return
 
-## License
-For open source projects, say how it is licensed.
+    # Authenticate and trigger Cloud Run Job
+    credentials = service_account.IDTokenCredentials.from_service_account_file(
+        'service-account.json',
+        target_audience='https://run.googleapis.com/'
+    )
+    client = build('run', 'v1', credentials=credentials)
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+    parent = f"projects/{os.getenv('GCP_PROJECT')}/locations/{os.getenv('GCP_REGION')}/jobs/{job_name}"
+    request = client.projects().locations().jobs().run(name=parent, body={"args": args})
+    response = request.execute()
+
+    print(f"Job {job_name} triggered with response: {response}")
+```
+
+### **Cloud Function Deployment**
+
+1. **Deploy Cloud Function**:
+   The Cloud Function is deployed using **Terraform**. It listens to the Pub/Sub topic, and when a message is received, it triggers the appropriate Cloud Run Job based on the job name defined during the job creation phase.
+
+2. **Pub/Sub Topic**:
+   The topic used by the Cloud Function is managed via Terraform. This topic is where you publish messages containing extra arguments for the workflow.
+
+---
+
+## **Deployment Steps**
+
+The project includes a **Makefile** to simplify deployment.
+
+### **1. Infrastructure Setup (Terraform)**
+
+Run the following commands to set up the infrastructure using Terraform:
+
+```bash
+make infra-apply
+```
+
+This command runs the necessary `terraform apply` commands, setting up Pub/Sub, Cloud Functions, and Cloud Run Jobs.
+
+### **2. Build and Push Docker Image**
+
+To build and push the Docker image for the workflows, use the following command:
+
+```bash
+make build-push
+```
+
+This will build the Docker image and push it to Google Container Registry.
+
+### **3. Deploy Cloud Run Jobs**
+
+After building the Docker image, deploy the **Cloud Run Jobs** for the workflows using:
+
+```bash
+make deploy-jobs
+```
+
+This command will deploy Cloud Run Jobs for `push_feature` and `gitlab_pull_request`. The workflow for each job is defined during the job creation phase.
+
+---
+
+## **Makefile**
+
+The **Makefile** provides a simple way to deploy and manage the infrastructure and workflows.
+
+```Makefile
+.PHONY: infra-apply build-push deploy-jobs
+
+infra-apply:
+	@echo "Applying Terraform infrastructure..."
+	cd terraform && terraform apply -auto-approve
+
+build-push:
+	@echo "Building and pushing Docker image..."
+	docker build -t gcr.io/your-project-id/workflows:latest .
+	docker push gcr.io/your-project-id/workflows:latest
+
+deploy-jobs:
+	@echo "Deploying Cloud Run Jobs..."
+	gcloud beta run jobs create push-feature-job \
+	    --image gcr.io/your-project-id/workflows:latest \
+	    --region us-central1 \
+	    --set-env-vars WORKFLOW=push_feature \
+	    --max-retries 3
+	gcloud beta run jobs create gitlab-pull-request-job \
+	    --image gcr.io/your-project-id/workflows:latest \
+	    --region us-central1 \
+	    --set-env-vars WORKFLOW=gitlab_pull_request \
+	    --max-retries 3
+```
+
+---
+
+## **Usage**
+
+1. **Run Workflows**: Use the `make deploy-jobs` command to deploy workflows. Publish a message to the Pub/Sub topic with **extra arguments only**:
+
+   ```bash
+   gcloud pubsub topics publish trigger-workflow-topic        --message '{"job_name": "push-feature-job", "args": ["--repo=git@github.com:user/repo.git", "--branch=feature-branch"]}'
+   ```
+
+2. **Monitor Jobs**: Use Google Cloud Console to monitor job execution in Cloud Run.
+
+---
+
+## **Configuration**
+
+- **Workflows**: Each workflow is defined at the time of Cloud Run Job creation and cannot be changed dynamically at runtime.
+- **Extra Arguments**: The Pub/Sub message only passes extra arguments specific to the job, such as the repository URL or feature branch.
+- **Environment Variables**: Sensitive information such as GitLab tokens should be handled using environment variables or Secret Manager.
+
+---
+
+## **Contributing**
+
+1. Fork the repository.
+2. Create a new feature branch.
+3. Submit a pull request.
+
+---
+
+## **License**
+
+This project is licensed under the MIT License.
+
+---
+
+This updated README reflects the change that the workflow is defined during Cloud Run Job creation, and only extra arguments for the workflow are passed via Pub/Sub. Let me know if further modifications are needed!
