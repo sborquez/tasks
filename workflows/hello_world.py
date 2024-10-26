@@ -6,6 +6,8 @@ from random import randint
 
 class Parameters(BaseModel):
     git_url: str = Field(description="URL of the git repository to clone")
+    git_user: str | None = Field(description="Git user name for configuration", default=None)
+    git_email: str | None = Field(description="Git user email for configuration", default=None)
 
 
 @task
@@ -25,10 +27,17 @@ def workflow(parameters: Parameters) -> None:
     logger = get_run_logger()
     logger.debug("Starting Hello World Workflow")
     git_url = parameters.git_url
+    git_user = parameters.git_user
+    git_email = parameters.git_email
     logger.debug(f"Git URL: {git_url}")
+    if git_user and git_email:
+        logger.debug(f"Git User: {git_user}")
+        logger.debug(f"Git Email: {git_email}")
+    else:
+        logger.debug("Using system's Git configuration")
     temp_dir = create_temporary_dir()
     logger.debug(f"Temporary directory created: {temp_dir}")
-    repo_dir = clone_repository(git_url, temp_dir)
+    repo_dir = clone_repository(git_url, temp_dir, git_user, git_email)
     logger.debug(f"Repository cloned to: {repo_dir}")
     branch = create_branch(repo_dir, f"hello-world-{randint(0, 1000):04}")
     logger.debug(f"New branch created: {branch}")

@@ -16,7 +16,7 @@ format:
 	ruff check --fix .
 	ruff format .
 
-.PHONY: infra-apply build-push deploy-jobs
+.PHONY: infra-apply build-local build-push deploy-jobs
 
 # Apply Terraform infrastructure
 infra-apply:
@@ -24,6 +24,10 @@ infra-apply:
 	cd terraform && terraform apply -auto-approve
 
 # Build and push Docker image
+build-local:
+	@echo "Building Docker image..."
+	docker build -t workflows:latest .
+
 build-push:
 	@echo "Building and pushing Docker image..."
 	docker build -t gcr.io/$(PROJECT_ID)/workflows:latest .

@@ -3,11 +3,15 @@ import os
 from prefect import task, get_run_logger
 from git import Repo, GitCommandError
 
+def is_running_in_docker():
+    """Check if the code is running inside a Docker container."""
+    return os.path.exists('/.dockerenv')
+
 
 @task
-def clone_repository(git_url: str, local_dir: str) -> str:
+def clone_repository(git_url: str, local_dir: str, git_user: str = None, git_email: str = None) -> str:
     """
-    Clone a git repository to a local directory.
+    Clone a git repository to a local directory and configure git user and email.
 
     Parameters
     ----------
@@ -15,6 +19,10 @@ def clone_repository(git_url: str, local_dir: str) -> str:
         The URL of the git repository to clone.
     local_dir : str
         The local directory path where the repository will be cloned.
+    git_user : str, optional
+        The Git user name to configure. If None, uses the system's Git configuration.
+    git_email : str, optional
+        The Git user email to configure. If None, uses the system's Git configuration.
 
     Returns
     -------
@@ -24,15 +32,41 @@ def clone_repository(git_url: str, local_dir: str) -> str:
     Notes
     -----
     If the local directory already exists, it will be cleaned up before cloning.
+    Git user and email will be configured for the cloned repository if provided.
     """
     logger = get_run_logger()
     logger.debug(f"Cloning repository from {git_url} to {local_dir}")
     if os.path.exists(local_dir):
-        logger.warning(f"Directory {local_dir} already exists. Cleaning up...")
-        # Logic to clean up existing directory
-        pass
-    Repo.clone_from(git_url, local_dir)
+        logger.warning(f"Directory {local_dir} already exists.")
+
+    if is_running_in_docker():
+        logger.debug("Running in Docker environment")
+        # Docker environment: Use token-based authentication
+        if git_url.startswith("https://"):
+            if "GIT_TOKEN" not in os.environ:
+                raise ValueError("GIT_TOKEN environment variable is not set.")
+            git_token = os.getenv("GIT_TOKEN")
+            git_url = git_url.replace("https://", f"https://{git_token}@")
+        elif git_url.startswith("git@"):
+            raise ValueError("SSH URLs are not supported in Docker. Please use HTTPS URLs.")
+        else:
+            raise ValueError("Unsupported git URL format.")
+    else:
+        # User environment: Use system's Git configuration
+        logger.debug("Using system's Git configuration for authentication")
+
+    repo = Repo.clone_from(git_url, local_dir)
     logger.debug(f"Repository cloned successfully to {local_dir}")
+
+    # Configure Git user and email if provided
+    if git_user and git_email:
+        logger.debug(f"Configuring Git user: {git_user} and email: {git_email}")
+        repo.git.config('user.name', git_user)
+        repo.git.config('user.email', git_email)
+        logger.debug("Git user and email configured successfully")
+    else:
+        logger.debug("Using system's Git user and email configuration")
+
     return local_dir
 
 @task
