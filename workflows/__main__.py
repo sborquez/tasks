@@ -22,8 +22,16 @@ def parse_parameters(workflow_name: str, workflow_parameters: Type[BaseModel]) -
     )
     # Build parser dynamically based on the Parameters model
     for name, field in workflow_parameters.__fields__.items():
-        parser.add_argument(f'--{name}', required=True, help=field.description)
-
+        has_default = field.default != ...
+        help_text = field.description
+        if has_default:
+            help_text += f" (default: {field.default})"
+        parser.add_argument(
+            f'--{name}',
+            required=not has_default,
+            help=help_text,
+            default=field.default if has_default else None
+        )
     args = parser.parse_args()
     parameters = workflow_parameters(**vars(args))
     return parameters

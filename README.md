@@ -15,6 +15,7 @@ Workflows/
 │   │   ├── utility.py
 │   │   ├── gitlab.py
 │   │   └── pluscoder.py
+│   ├── __main__.py          # Entry point for Prefect workflows
 │   ├── hello_world.py
 │   ├── push_feature.py
 │   └── resolve_issue.py
@@ -26,7 +27,6 @@ Workflows/
 ├── Makefile                 # Makefile for deployment instructions
 ├── Dockerfile               # Dockerfile for Cloud Run Job
 ├── requirements.txt         # Python dependencies
-├── main.py                  # Entry point for Prefect workflows
 ├── pubsub_function/         # Cloud Function to trigger Cloud Run Jobs
 │   └── main.py              # Cloud Function code
 └── README.md                # Project documentation
@@ -63,9 +63,9 @@ To set up the project environment and install dependencies, follow these steps:
 - [x] **git tasks**: Tasks for cloning repositories, creating branches, and pushing changes.
 - [x] **utility tasks**: Utility tasks for notifications and logging.
 - [x] **hello_world**: Simple workflow to clone a repository, create a new branch, and push changes.
+- [x] **Dockers Deployment**: Build and push Docker images for workflows.
 - [ ] **Cloud Infrastructure**: Set up Cloud Run Jobs, Pub/Sub, and Cloud Function for workflow orchestration with Terraform.
 - [ ] **Cloud Function Trigger**: Listen to Pub/Sub messages and trigger Cloud Run Jobs with extra arguments.
-- [ ] **Dockers Deployment**: Build and push Docker images for workflows.
 - [ ] **pluscoder tasks**: Interact with PlusCoder for specific development tasks.
 - [ ] **push_feature**: Automate the process of cloning a repository, creating a new feature branch, adding changes, and pushing to the branch.
 - [ ] **resolve_issue**: Automate resolving a GitLab issue, including pushing a branch with changes, creating a merge request, and notifying completion.
@@ -88,6 +88,26 @@ make format
 ```
 
 ---
+
+### Setting Up Git Token
+
+#### Setting Up GCP for Cloud Run Job
+
+To securely use your Git token for Git operations in Cloud Run Jobs, follow these steps:
+
+* Store the Token in GCP Secret Manager
+    1. Navigate to Secret Manager in the GCP Console.
+    2. Create a New Secret with the name `GIT_TOKEN`.
+
+* Configure Cloud Run to Access the Secret
+    1. When deploying your Cloud Run Job, mount the secret as an environment variable `GIT_TOKEN`.
+    2. Ensure the Cloud Run service account has the “Secret Manager Secret Accessor” role.
+
+#### Running Locally with Docker
+
+To run the application locally using Docker with the --env option, follow these steps:
+
+* `docker run -e GIT_TOKEN workflows:latest ...`
 
 ## **Workflows Overview**
 
