@@ -6,6 +6,9 @@ CODING_GUIDELINES.md
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+.pytest_cache/
 
 # Virtual environments
 venv/
@@ -37,3 +40,5 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Cloud Functions
+infrastructure/workflow-trigger-function-source.zip

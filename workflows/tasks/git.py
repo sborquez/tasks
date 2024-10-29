@@ -1,12 +1,12 @@
 import os
 
-from prefect import task, get_run_logger
 from git import Repo, GitCommandError
 
-def is_running_in_docker():
-    """Check if the code is running inside a Docker container."""
-    return os.path.exists('/.dockerenv')
+from workflows import get_logger, task
+from workflows.tasks.utils import is_running_in_docker, is_running_in_cloud_run_job
 
+
+logger = get_logger(__name__)
 
 @task
 def clone_repository(git_url: str, local_dir: str, git_user: str = None, git_email: str = None) -> str:
@@ -34,12 +34,11 @@ def clone_repository(git_url: str, local_dir: str, git_user: str = None, git_ema
     If the local directory already exists, it will be cleaned up before cloning.
     Git user and email will be configured for the cloned repository if provided.
     """
-    logger = get_run_logger()
     logger.debug(f"Cloning repository from {git_url} to {local_dir}")
     if os.path.exists(local_dir):
         logger.warning(f"Directory {local_dir} already exists.")
 
-    if is_running_in_docker():
+    if is_running_in_docker() or is_running_in_cloud_run_job():
         logger.debug("Running in Docker environment")
         # Docker environment: Use token-based authentication
         if git_url.startswith("https://"):
@@ -86,7 +85,6 @@ def create_branch(local_dir: str, branch_name: str) -> str:
     str
         The name of the newly created branch.
     """
-    logger = get_run_logger()
     logger.debug(f"Creating new branch '{branch_name}' in repository at {local_dir}")
     repo = Repo(local_dir)
     new_branch = repo.create_head(branch_name)
@@ -116,7 +114,6 @@ def commit_changes(local_dir: str, commit_message: str) -> bool:
     This function checks for both staged and untracked files before committing.
     If no changes are found, a warning message is printed.
     """
-    logger = get_run_logger()
     logger.debug(f"Committing changes in repository at {local_dir}")
     repo = Repo(local_dir)
     if repo.is_dirty() or repo.untracked_files:
@@ -150,7 +147,6 @@ def push_changes(local_dir: str, branch_name: str) -> bool:
     This function checks for unpushed commits before pushing.
     If no unpushed commits are found, a warning message is printed.
     """
-    logger = get_run_logger()
     logger.debug(f"Pushing changes from branch '{branch_name}' in repository at {local_dir}")
     repo = Repo(local_dir)
     origin = repo.remote(name="origin")
@@ -205,7 +201,6 @@ def push_changes(local_dir: str, branch_name: str) -> bool:
 #     This function requires a GitHub token to be set in the environment variables.
 #     """
 #     from github import Github
-#     logger = get_run_logger()
 #     logger.debug(f"Pushing changes from branch '{branch_name}' in repository at {local_dir}")
 #     git_token = os.getenv('GITHUB_TOKEN')
 #     g = Github(git_token)
@@ -241,6 +236,5 @@ def push_changes(local_dir: str, branch_name: str) -> bool:
 #    -----
 #    This function is a placeholder for GitLab pull request creation logic.
 #    """
-#     logger = get_run_logger()
 #     logger.debug(f"Pushing changes from branch '{branch_name}' in repository at {local_dir}")
 #    pass
