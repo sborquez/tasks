@@ -22,13 +22,14 @@ Workflows/
 ├── infrastructure/          # Terraform files for infrastructure
 │   ├── main.tf
 │   ├── variables.tf
-│   └── outputs.tf
+│   ├── outputs.tf
+│   └── workflow_trigger/      # Cloud Function code
+│       ├── requirements.txt
+│       └── main.py
 ├── tests/                   # Unit tests for workflows
 ├── Makefile                 # Makefile for deployment instructions
 ├── Dockerfile               # Dockerfile for Cloud Run Job
 ├── requirements.txt         # Python dependencies
-├── pubsub_function/         # Cloud Function to trigger Cloud Run Jobs
-│   └── main.py              # Cloud Function code
 └── README.md                # Project documentation
 ```
 
@@ -89,7 +90,7 @@ make format
 
 ---
 
-### Setting Up Git Token
+### Setting Up Secret Tokens
 
 #### Setting Up GCP for Cloud Run Job
 
@@ -135,54 +136,54 @@ This project runs workflows as **Cloud Run Jobs**, triggered by **Pub/Sub** mess
 - **Cloud Run Jobs**: Executes Prefect workflows packaged in Docker. Each Cloud Run Job is created with a specific workflow defined at the creation phase.
 - **Google Cloud Pub/Sub**: Used to publish messages that trigger workflows with extra arguments.
 - **Cloud Function**: Listens to Pub/Sub and triggers the specific Cloud Run Job, passing extra arguments (e.g., repository details, feature name).
-- **Terraform**: Manages infrastructure as code, deploying Pub/Sub topics, Cloud Functions, and Cloud Run Jobs.
+- **Terraform**: Manages infrastructure as code, deploying Secrets, Pub/Sub topics, Cloud Functions, and Cloud Run Jobs.
+
+### **Infrastructure Details**:
+
+1. **Pub/Sub Topic**: A topic is created to receive messages for triggering workflows.
+2. **Cloud Function**:
+   - Listens to the Pub/Sub topic
+   - Decodes incoming messages
+   - Determines which Cloud Run Job to trigger based on the message content
+   - Triggers the appropriate Cloud Run Job using the Cloud Run API
+3. **Cloud Run Jobs**:
+   - A job is created for the hello_world workflow
+   - Jobs for other workflows (e.g., push_feature, gitlab_pull_request) can be added as needed
+4. **IAM Permissions**: The Cloud Function is granted necessary permissions to trigger Cloud Run Jobs
+5. **APIs**: Required APIs (cloudfunctions.googleapis.com, pubsub.googleapis.com) are enabled
+6. **Secrets**: Sensitive information such as GitLab tokens can be stored in Secret Manager and accessed by Cloud Run Jobs.
+
+All these components are defined and managed using Terraform, ensuring consistent and reproducible infrastructure deployment.
 
 ---
 
 ## **Cloud Function Trigger**
 
-The **Google Cloud Function** listens for messages published to a **Google Cloud Pub/Sub** topic. Upon receiving a message, the Cloud Function triggers the pre-defined **Cloud Run Job** for the workflow (set during job creation), passing any extra arguments specified in the Pub/Sub message.
+The **Google Cloud Function** listens for messages published to a **Google Cloud Pub/Sub** topic. Upon receiving a message, the Cloud Function triggers the pre-defined **Cloud Run Job** for the workflow (set during job creation), passing new parameters specified in the Pub/Sub message.
 
 ### **Cloud Function Logic**:
 
 1. The workflow is **already defined** during the job creation phase and is not passed in the Pub/Sub message.
 2. The Pub/Sub message contains **only extra arguments** (e.g., feature name, branch name) for the workflow.
-3. The Cloud Function uses the **Google Cloud Run API** to trigger the pre-configured Cloud Run Job, passing the extra arguments.
+3. The Cloud Function uses the **Google Cloud Run API** to trigger the pre-configured Cloud Run Job, passing the arguments.
 
-#### **Cloud Function Code (pubsub_function/main.py)**
+### **Pub/Sub Message Structure**:
 
-```python
-import base64
-import json
-import os
-from googleapiclient.discovery import build
-from google.oauth2 import service_account
+The Pub/Sub message structure is as follows:
 
-def trigger_workflow(event, context):
-    """Triggered from a message on a Cloud Pub/Sub topic."""
-    pubsub_message = base64.b64decode(event['data']).decode('utf-8')
-    message_data = json.loads(pubsub_message)
-
-    job_name = message_data.get('job_name')
-    args = message_data.get('args', [])
-
-    if not job_name:
-        print("No job_name provided in the Pub/Sub message.")
-        return
-
-    # Authenticate and trigger Cloud Run Job
-    credentials = service_account.IDTokenCredentials.from_service_account_file(
-        'service-account.json',
-        target_audience='https://run.googleapis.com/'
-    )
-    client = build('run', 'v1', credentials=credentials)
-
-    parent = f"projects/{os.getenv('GCP_PROJECT')}/locations/{os.getenv('GCP_REGION')}/jobs/{job_name}"
-    request = client.projects().locations().jobs().run(name=parent, body={"args": args})
-    response = request.execute()
-
-    print(f"Job {job_name} triggered with response: {response}")
+```json
+{
+  "workflow": "hello_world",
+  "parameters": {"git_url": "...", ...}
+}
 ```
+
+#### Sending a Pub/Sub Message:
+
+```bash
+gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "hello_world", "parameters": {"git_url": "...", ... }}'
+```
+
 
 ### **Cloud Function Deployment**
 
@@ -200,20 +201,25 @@ The project includes a **Makefile** to simplify deployment.
 
 ### **1. Infrastructure Setup (Terraform)**
 
-Run the following commands to set up the infrastructure using Terraform:
+Run the following command to set up the infrastructure using Terraform:
 
 ```bash
 make infra-apply
 ```
 
-This command runs the necessary `terraform apply` commands, setting up Pub/Sub, Cloud Functions, and Cloud Run Jobs.
+This command runs the necessary `terraform apply` commands, setting up:
+- Pub/Sub topic
+- Cloud Function
+- Cloud Run Job for hello_world workflow
+- IAM permissions
+- Required APIs
 
-### **2. Build and Push Docker Image**
+### **2. Build and Push Docker Image with Cloud Build**
 
 To build and push the Docker image for the workflows, use the following command:
 
 ```bash
-make build-push
+make build-and-push
 ```
 
 This will build the Docker image and push it to Google Container Registry.
@@ -226,67 +232,40 @@ After building the Docker image, deploy the **Cloud Run Jobs** for the workflows
 make deploy-jobs
 ```
 
-This command will deploy Cloud Run Jobs for `push_feature` and `gitlab_pull_request`. The workflow for each job is defined during the job creation phase.
+This command will update the deployed Cloud Run Jobs for the defined workflows. The workflow for each job is defined during the infrastructure setup phase.
 
----
+### **4. Verify Deployment**
 
-## **Makefile**
+After deployment, verify that:
+- The Pub/Sub topic is created
+- The Cloud Function is deployed and linked to the Pub/Sub topic
+- The Cloud Run Jobs are created and ready to be triggered
+- IAM permissions are correctly set
 
-The **Makefile** provides a simple way to deploy and manage the infrastructure and workflows.
-
-```Makefile
-.PHONY: infra-apply build-push deploy-jobs
-
-infra-apply:
-	@echo "Applying Terraform infrastructure..."
-	cd terraform && terraform apply -auto-approve
-
-build-push:
-	@echo "Building and pushing Docker image..."
-	docker build -t gcr.io/your-project-id/workflows:latest .
-	docker push gcr.io/your-project-id/workflows:latest
-
-deploy-jobs:
-	@echo "Deploying Cloud Run Jobs..."
-	gcloud beta run jobs create push-feature-job \
-	    --image gcr.io/your-project-id/workflows:latest \
-	    --region us-central1 \
-	    --set-env-vars WORKFLOW=push_feature \
-	    --max-retries 3
-	gcloud beta run jobs create gitlab-pull-request-job \
-	    --image gcr.io/your-project-id/workflows:latest \
-	    --region us-central1 \
-	    --set-env-vars WORKFLOW=gitlab_pull_request \
-	    --max-retries 3
-```
+You can use the Google Cloud Console or `gcloud` CLI commands to verify these components.
 
 ---
 
 ## **Usage**
 
-1. **Run Workflows**: Use the `make deploy-jobs` command to deploy workflows. Publish a message to the Pub/Sub topic with **extra arguments only**:
+To trigger a workflow, publish a message to the Pub/Sub topic with the job name and any extra arguments required for the workflow. The Cloud Function will receive this message and trigger the appropriate Cloud Run Job.
 
+1. **Hello World Workflow**:
    ```bash
-   gcloud pubsub topics publish trigger-workflow-topic        --message '{"job_name": "push-feature-job", "args": ["--repo=git@github.com:user/repo.git", "--branch=feature-branch"]}'
+   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "hello_world", "args": {"repo": "https://github.com/example/repo.git", "branch": "hello-world"}}'
    ```
 
-2. **Monitor Jobs**: Use Google Cloud Console to monitor job execution in Cloud Run.
+2. **Push Feature Workflow** (when implemented):
+   ```bash
+   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "push_feature", "args": {...}}'
+   ```
 
----
+3. **GitLab Pull Request Workflow** (when implemented):
+   ```bash
+   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "gitlab_pull_request", "args": {...}}'
+   ```
 
-## **Configuration**
-
-- **Workflows**: Each workflow is defined at the time of Cloud Run Job creation and cannot be changed dynamically at runtime.
-- **Extra Arguments**: The Pub/Sub message only passes extra arguments specific to the job, such as the repository URL or feature branch.
-- **Environment Variables**: Sensitive information such as GitLab tokens should be handled using environment variables or Secret Manager.
-
----
-
-## **Contributing**
-
-1. Fork the repository.
-2. Create a new feature branch.
-3. Submit a pull request.
+Replace `workflow-trigger-topic` with the actual name of your Pub/Sub topic.
 
 ---
 
