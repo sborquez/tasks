@@ -1,4 +1,3 @@
-from workflows import hello_world
 from pydantic import BaseModel
 from typing import Type
 
@@ -21,9 +20,9 @@ def parse_parameters(workflow_name: str, workflow_parameters: Type[BaseModel]) -
         description=f"Run {workflow_name.replace('_', ' ').title()} workflow",
     )
     # Build parser dynamically based on the Parameters model
-    for name, field in workflow_parameters.__fields__.items():
+    for name, field in workflow_parameters.model_fields.items():
         has_default = field.default != ...
-        help_text = field.description
+        help_text = field.description or ""
         if has_default:
             help_text += f" (default: {field.default})"
         parser.add_argument(
@@ -39,15 +38,20 @@ def parse_parameters(workflow_name: str, workflow_parameters: Type[BaseModel]) -
 
 def run_workflow(workflow_name: str) -> None:
     if workflow_name == "hello_world":
+        from workflows.flows import hello_world
         parameters = hello_world.Parameters
         flow = hello_world.workflow
+    elif workflow_name == "push_feature":
+        from workflows.flows import push_feature
+        parameters = push_feature.Parameters
+        flow = push_feature.workflow
     else:
         raise ValueError(f"Unknown workflow: {workflow_name}")
     # Parse and validate input parameters
     parameters = parse_parameters(workflow_name, parameters)
-    flow(parameters)
+    flow(parameters)  # type: ignore
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import os
     workflow_name = os.environ.get("WORKFLOW_NAME")
     if not workflow_name:

@@ -10,12 +10,22 @@ output "region" {
   value       = var.region
 }
 
-output "pubsub_topic_name" {
+output "workflow_trigger_topic_name" {
   description = "The name of the Pub/Sub topic for triggering workflows"
-  value       = google_pubsub_topic.workflow_trigger_topic.name
+  value       = module.workflow_trigger.workflow_trigger_topic_name
 }
 
-output "cloud_function_url" {
-  description = "The URL of the Cloud Function that listens to Pub/Sub and triggers Cloud Run Jobs"
-  value       = google_cloudfunctions_function.workflow_trigger_function.https_trigger_url
+output "workflow_trigger_function_name" {
+  description = "The name of the Cloud Function that triggers workflows"
+  value       = module.workflow_trigger.workflow_trigger_function_name
 }
+
+output "workflow_trigger_function_service_account_email" {
+  description = "The service account email of the Cloud Function"
+  value       = module.workflow_trigger.workflow_trigger_function_service_account_email
+}
+
+# output "cloud_function_url_push_feature" {
+#   description = "The URL of the Cloud Function that triggers the push_feature workflow via HTTP"
+#   value       = google_cloudfunctions_function.push_feature_function.https_trigger_url
+# }

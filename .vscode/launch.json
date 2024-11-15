@@ -15,14 +15,55 @@
                 "WORKFLOW_NAME": "hello_world",
                 "PREFECT_LOGGING_LEVEL": "DEBUG",
                 "PYTHONPATH": "${workspaceFolder}"
-            }
+            },
+            "envFile": "/Users/sebas/.pluscoder/.pluscoder-env"
+        },
+        {
+            "name": "Run Push Feature Workflow 1",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/workflows/__main__.py",
+            "args": [
+                "--git_url", "https://github.com/sborquez/studious-giggle.git",
+                "--author", "Sebastian Borquez",
+                "--feature_request", "Add a main.py file that prints 'Hello, World!'",
+                "--feature_branch", "feature/hello-world",
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "WORKFLOW_NAME": "push_feature",
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG"
+            },
+            "envFile": "/Users/sebas/.pluscoder/.pluscoder-env"
+        },
+        {
+            "name": "Run Push Feature Workflow 2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/workflows/__main__.py",
+            "args": [
+                "--git_url", "https://github.com/sborquez/studious-giggle.git",
+                "--author", "Sebastian Borquez",
+                "--source_branch", "feature/hello-world",
+                "--feature_request", "Modify the main.py, instead of just printing 'Hello, World!', I want to print 'Hello, World! I'm Sebastian Borquez'. Where 'Sebastian Borquez' is a CLI parameters with the flag --name.",
+            ],
+            "console": "integratedTerminal",
+            "env": {
+                "WORKFLOW_NAME": "push_feature",
+                "PYTHONPATH": "${workspaceFolder}",
+                "LOG_LEVEL": "DEBUG"
+            },
+            "envFile": "/Users/sebas/.pluscoder/.pluscoder-env"
         },
         {
             "name": "Run All Tests",
             "type": "debugpy",
             "request": "launch",
-            "module": "unittest",
-            "args": ["discover", "-v", "-s", "${workspaceFolder}/tests", "-p", "test_*.py"],
+            "module": "pytest",
+            "args": [
+                "${workspaceFolder}/tests"
+            ],
             "console": "integratedTerminal",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"

@@ -184,6 +184,18 @@ The Pub/Sub message structure is as follows:
 gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "hello_world", "parameters": {"git_url": "...", ... }}'
 ```
 
+Examples:
+
+- **hello_world Workflow**:
+```bash
+gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "hello_world", "parameters": {"git_url": "https://github.com/sborquez/studious-giggle.git", "git_user": "Sebastián Bórquez", "git_email": "sebastian.borquez.g@gmail.com"}}'
+```
+
+- **push_feature Workflow**:
+```bash
+gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "push_feature", "parameters": {"author": "Sebastian Borquez", "feature_request": "Add a main.py file that prints -Hello, World!-", "git_url": "https://github.com/sborquez/studious-giggle.git", "source_branch": "main"}}'
+```
+
 
 ### **Cloud Function Deployment**
 
@@ -244,28 +256,6 @@ After deployment, verify that:
 
 You can use the Google Cloud Console or `gcloud` CLI commands to verify these components.
 
----
-
-## **Usage**
-
-To trigger a workflow, publish a message to the Pub/Sub topic with the job name and any extra arguments required for the workflow. The Cloud Function will receive this message and trigger the appropriate Cloud Run Job.
-
-1. **Hello World Workflow**:
-   ```bash
-   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "hello_world", "args": {"repo": "https://github.com/example/repo.git", "branch": "hello-world"}}'
-   ```
-
-2. **Push Feature Workflow** (when implemented):
-   ```bash
-   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "push_feature", "args": {...}}'
-   ```
-
-3. **GitLab Pull Request Workflow** (when implemented):
-   ```bash
-   gcloud pubsub topics publish workflow-trigger-topic --message '{"job_name": "gitlab_pull_request", "args": {...}}'
-   ```
-
-Replace `workflow-trigger-topic` with the actual name of your Pub/Sub topic.
 
 ---
 
