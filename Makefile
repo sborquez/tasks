@@ -1,5 +1,3 @@
-.PHONY: create-env test format
-
 PROJECT_ID = $(shell gcloud config get-value project)
 PUBSUB_TOPIC = workflow-trigger
 CLOUD_FUNCTION_NAME = workflow-trigger-function
@@ -8,6 +6,7 @@ REGION = us-central1
 WORKFLOW_IMAGE = workflows
 WORKFLOW_TAG = latest
 
+.PHONY: create-env test format
 # Create conda environment and install dependencies
 create-env:
 	conda create --name workflows-env python=3.10 -y
@@ -24,7 +23,7 @@ format:
 	ruff check --fix .
 	ruff format .
 
-.PHONY: infra-apply build-local build-push deploy-jobs
+.PHONY: infra-apply build-local push-local run-local build-and-push deploy-jobs
 
 # Apply Terraform infrastructure
 infra-apply:
@@ -32,12 +31,13 @@ infra-apply:
 	cd infrastructure/workflow_trigger && zip -r "../$(CLOUD_FUNCTION_NAME)-source.zip" .
 	cd ./infrastructure && terraform apply -auto-approve \
 		-var="project_id=$(PROJECT_ID)" \
-		-var="cloud_function_name=$(CLOUD_FUNCTION_NAME)"
+		-var="trigger_cloud_function_name=$(CLOUD_FUNCTION_NAME)"
 
 # Build and push Docker image Locally
 build-local:
 	@echo "Building Docker image..."
-	docker build -t $(WORKFLOW_IMAGE):$(WORKFLOW_TAG) .
+	docker buildx create --use
+	docker buildx build --platform linux/amd64,linux/arm64  -t $(WORKFLOW_IMAGE):$(WORKFLOW_TAG) .
 
 push-local:
 	@echo "Pushing Docker image..."
@@ -62,17 +62,15 @@ deploy-jobs:
 	    --region $(REGION) \
 	    --set-env-vars WORKFLOW_NAME=hello_world \
 	    --max-retries 3
+	@echo "Updating push-feature-job..."
+	gcloud run jobs update push-feature-job \
+	    --image gcr.io/$(PROJECT_ID)/$(WORKFLOW_IMAGE):$(WORKFLOW_TAG) \
+	    --region $(REGION) \
+	    --set-env-vars WORKFLOW_NAME=push_feature \
+	    --max-retries 3
 	# @echo "Updating push-feature-job..."
 	# gcloud run jobs update push-feature-job \
 	#     --image gcr.io/$(PROJECT_ID)/$(WORKFLOW_IMAGE):$(WORKFLOW_TAG) \
 	#     --region $(REGION) \
 	#     --set-env-vars WORKFLOW_NAME=push_feature \
 	#     --max-retries 3
-	# @echo "Updating push-feature-job..."
-	# gcloud run jobs update push-feature-job \
-	#     --image gcr.io/$(PROJECT_ID)/$(WORKFLOW_IMAGE):$(WORKFLOW_TAG) \
-	#     --region $(REGION) \
-	#     --set-env-vars WORKFLOW_NAME=push_feature \
-	#     --max-retries 3
-
-.PHONY: deploy-function create-pubsub-topic

@@ -15,11 +15,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Set environment variables with default values
-ENV WORKFLOW_NAME="hello_world" \
-    PREFECT_LOGGING_LEVEL="INFO"
+ENV WORKFLOW_NAME="hello_world"
 
-# Copy an executable from the pluscode:latest image
-# COPY --from=pluscode:latest /bin/pluscode /bin/pluscode
+# COPY --from=registry.gitlab.com/codematos/pluscoder-repository:latest /bin/pluscoder /bin/pluscoder
+COPY --from=gcr.io/pluscoder-workflows-441503/pluscoder:latest /bin/pluscoder /bin/pluscoder
 
 # Set the entrypoint to run the workflows executable
 ENTRYPOINT ["python", "-m", "workflows"]
