@@ -41,4 +41,4 @@ dist/
 Thumbs.db
 
 # Cloud Functions
-infrastructure/workflow-trigger-function-source.zip
+infrastructure/**/*.zip

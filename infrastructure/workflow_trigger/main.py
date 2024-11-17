@@ -6,7 +6,7 @@ import requests
 from google.auth import default
 from google.cloud import run_v2
 
-import functions_framework
+import functions_framework  # type: ignore
 
 
 # Initialize the Cloud Run client

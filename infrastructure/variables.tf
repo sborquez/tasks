@@ -39,13 +39,6 @@ variable "push_feature_job_name" {
   default     = "push-feature-job"
 }
 
-# variable "push_feature_cloud_function_name" {
-#   description = "The name of the Cloud Function to trigger the push_feature workflow via HTTP"
-#   type        = string
-#   default     = "push-feature-function"
-# }
-
-
 // Secret Manager Variables
 variable "git_token_value" {
   description = "A git access token to be stored in Secret Manager"

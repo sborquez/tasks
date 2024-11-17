@@ -1,6 +1,7 @@
 PROJECT_ID = $(shell gcloud config get-value project)
 PUBSUB_TOPIC = workflow-trigger
-CLOUD_FUNCTION_NAME = workflow-trigger-function
+TRIGGER_CLOUD_FUNCTION_NAME = workflow-trigger-function
+
 REGION = us-central1
 
 WORKFLOW_IMAGE = workflows
@@ -28,10 +29,11 @@ format:
 # Apply Terraform infrastructure
 infra-apply:
 	@echo "Applying Terraform infrastructure..."
-	cd infrastructure/workflow_trigger && zip -r "../$(CLOUD_FUNCTION_NAME)-source.zip" .
+	cd infrastructure/workflow_trigger && zip -r "../$(TRIGGER_CLOUD_FUNCTION_NAME)-source.zip" .
+	cd infrastructure/workflow_http_pub/push_feature_request  && zip -r "../push_feature_request-source.zip" .
 	cd ./infrastructure && terraform apply -auto-approve \
 		-var="project_id=$(PROJECT_ID)" \
-		-var="trigger_cloud_function_name=$(CLOUD_FUNCTION_NAME)"
+		-var="trigger_cloud_function_name=$(TRIGGER_CLOUD_FUNCTION_NAME)"
 
 # Build and push Docker image Locally
 build-local:
