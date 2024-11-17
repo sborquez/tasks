@@ -25,7 +25,12 @@ output "workflow_trigger_function_service_account_email" {
   value       = module.workflow_trigger.workflow_trigger_function_service_account_email
 }
 
-# output "cloud_function_url_push_feature" {
-#   description = "The URL of the Cloud Function that triggers the push_feature workflow via HTTP"
-#   value       = google_cloudfunctions_function.push_feature_function.https_trigger_url
-# }
+output "cloud_function_push_feature_name" {
+  description = "The name of the Cloud Function that publishes a trigger message via HTTP for the push_feature workflow"
+  value       = module.workflow_http_pub_push_feature.publisher_cloud_function_name
+}
+
+output "cloud_function_push_feature_url" {
+  description = "The URL of the Cloud Function that publishes a trigger message via HTTP for the push_feature workflow"
+  value       = module.workflow_http_pub_push_feature.publisher_cloud_function_url
+}

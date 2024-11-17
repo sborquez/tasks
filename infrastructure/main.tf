@@ -50,41 +50,6 @@ module "workflow_trigger" {
   ]
 }
 
-# Cloud Function to listen to HTTP and send a Pub/Sub message
-# resource "google_storage_bucket" "push_feature_cloud_function_bucket" {
-#   name     = "${var.project_id}-${var.push_feature_cloud_function_name}-bucket"
-#   location = var.region
-# }
-
-# resource "google_storage_bucket_object" "push_feature_cloud_function_archive" {
-#   name   = "${var.push_feature_cloud_function_name}-source.zip"
-#   bucket = google_storage_bucket.push_feature_cloud_function_bucket.name
-#   source = "./${var.push_feature_cloud_function_name}-source.zip"
-#   depends_on = [ google_storage_bucket.push_feature_cloud_function_bucket ]
-# }
-
-# resource "google_cloudfunctions_function" "push_feature_function" {
-#   name        = var.push_feature_cloud_function_name
-#   description = "Publish a message to Pub/Sub to trigger the push_feature workflow"
-#   runtime     = "python312"
-
-#   available_memory_mb   = 256
-#   source_archive_bucket = google_storage_bucket.push_feature_cloud_function_bucket.name
-#   source_archive_object = google_storage_bucket_object.push_feature_cloud_function_archive.name
-#   entry_point           = "push_feature_request"
-#   trigger_http = true
-
-#   environment_variables = {
-#     PUBSUB_TOPIC = var.pubsub_topic_name
-#   }
-
-#   depends_on = [
-#     google_storage_bucket_object.push_feature_cloud_function_archive,
-#     google_pubsub_topic.workflow_trigger_topic,
-#   ]
-# }
-
-
 # Cloud Run Job
 ## hello_world workflow
 module "hello_world_job" {
@@ -126,6 +91,23 @@ module "push_feature_job" {
     google_secret_manager_secret_version.git_token,
     google_secret_manager_secret.anthropic_api_key,
     google_secret_manager_secret_version.anthropic_api_key,
+  ]
+}
+
+# Cloud Function to listen to HTTP and send a Pub/Sub message
+module "workflow_http_pub_push_feature" {
+  source = "./modules/workflow_http_pub"
+
+  project_id                    = var.project_id
+  region                        = var.region
+  publisher_cloud_function_name = "push_feature_request"
+  source_archive_path           = "./workflow_http_pub/push_feature_request-source.zip"
+  pubsub_topic_name             = var.pubsub_topic_name
+  target_workflow = "push_feature"
+
+  depends_on = [
+    google_project_service.project_services,
+    time_sleep.wait_for_api_activation,
   ]
 }
 
@@ -189,9 +171,9 @@ resource "google_project_iam_member" "cloud_run_invoker" {
   member  = "serviceAccount:${module.workflow_trigger.workflow_trigger_function_service_account_email}"
 }
 
-# # IAM permissions for Cloud Function to send Pub/Sub messages
-# resource "google_project_iam_member" "pubsub_publisher" {
-#   project = data.google_project.current.project_id
-#   role    = "roles/pubsub.publisher"
-#   member  = "serviceAccount:${module.workflow_trigger.workflow_trigger_function_service_account_email}"
-# }
+# IAM permissions for Cloud Function to send Pub/Sub messages
+resource "google_project_iam_member" "pubsub_publisher" {
+  project = data.google_project.current.project_id
+  role    = "roles/pubsub.publisher"
+  member  = "serviceAccount:${module.workflow_trigger.workflow_trigger_function_service_account_email}"
+}

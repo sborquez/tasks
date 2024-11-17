@@ -23,9 +23,13 @@ Workflows/
 │   ├── main.tf
 │   ├── variables.tf
 │   ├── outputs.tf
-│   └── workflow_trigger/      # Cloud Function code
-│       ├── requirements.txt
-│       └── main.py
+│   ├── workflow_trigger/      # Cloud Function code
+│   │   ├── requirements.txt
+│   │   └── main.py
+│   └── workflow_http_pub/     # HTTP-triggered Cloud Functions
+│       └── push_feature_request/
+│           ├── main.py
+│           └── requirements.txt
 ├── tests/                   # Unit tests for workflows
 ├── Makefile                 # Makefile for deployment instructions
 ├── Dockerfile               # Dockerfile for Cloud Run Job
@@ -135,7 +139,9 @@ This project runs workflows as **Cloud Run Jobs**, triggered by **Pub/Sub** mess
 
 - **Cloud Run Jobs**: Executes Prefect workflows packaged in Docker. Each Cloud Run Job is created with a specific workflow defined at the creation phase.
 - **Google Cloud Pub/Sub**: Used to publish messages that trigger workflows with extra arguments.
-- **Cloud Function**: Listens to Pub/Sub and triggers the specific Cloud Run Job, passing extra arguments (e.g., repository details, feature name).
+- **Cloud Functions**:
+  - **Workflow Trigger**: Listens to Pub/Sub and triggers the specific Cloud Run Job, passing extra arguments (e.g., repository details, feature name).
+  - **Push Feature Request**: Handles HTTP requests to initiate the push feature workflow.
 - **Terraform**: Manages infrastructure as code, deploying Secrets, Pub/Sub topics, Cloud Functions, and Cloud Run Jobs.
 
 ### **Infrastructure Details**:
@@ -159,13 +165,15 @@ All these components are defined and managed using Terraform, ensuring consisten
 
 ## **Cloud Function Trigger**
 
-The **Google Cloud Function** listens for messages published to a **Google Cloud Pub/Sub** topic. Upon receiving a message, the Cloud Function triggers the pre-defined **Cloud Run Job** for the workflow (set during job creation), passing new parameters specified in the Pub/Sub message.
+The **Google Cloud Function** listens for messages published to a **Google Cloud Pub/Sub** topic. Upon receiving a message, the Cloud Function decodes it, determines which **Cloud Run Job** to trigger, and starts the job with the provided parameters.
 
 ### **Cloud Function Logic**:
 
-1. The workflow is **already defined** during the job creation phase and is not passed in the Pub/Sub message.
-2. The Pub/Sub message contains **only extra arguments** (e.g., feature name, branch name) for the workflow.
-3. The Cloud Function uses the **Google Cloud Run API** to trigger the pre-configured Cloud Run Job, passing the arguments.
+1. **Decode Pub/Sub message**: The function decodes the base64-encoded message from the Pub/Sub event.
+2. **Determine workflow**: It uses the 'workflow' field in the message to determine which Cloud Run Job to trigger.
+3. **Parse parameters**: The function extracts and formats the parameters from the 'parameters' field in the message.
+4. **Retrieve project and region**: It programmatically gets the Google Cloud Project ID and region.
+5. **Trigger Cloud Run Job**: Using the Cloud Run API, it starts the specified job with the parsed parameters.
 
 ### **Pub/Sub Message Structure**:
 
@@ -173,15 +181,19 @@ The Pub/Sub message structure is as follows:
 
 ```json
 {
-  "workflow": "hello_world",
-  "parameters": {"git_url": "...", ...}
+  "workflow": "workflow_name",
+  "parameters": {
+    "param1": "value1",
+    "param2": "value2",
+    ...
+  }
 }
 ```
 
 #### Sending a Pub/Sub Message:
 
 ```bash
-gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "hello_world", "parameters": {"git_url": "...", ... }}'
+gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "workflow_name", "parameters": {"param1": "value1", "param2": "value2", ...}}'
 ```
 
 Examples:
@@ -196,14 +208,16 @@ gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "hel
 gcloud pubsub topics publish workflow-trigger-topic --message '{"workflow": "push_feature", "parameters": {"author": "Sebastian Borquez", "feature_request": "Add a main.py file that prints -Hello, World!-", "git_url": "https://github.com/sborquez/studious-giggle.git", "source_branch": "main"}}'
 ```
 
-
 ### **Cloud Function Deployment**
 
 1. **Deploy Cloud Function**:
-   The Cloud Function is deployed using **Terraform**. It listens to the Pub/Sub topic, and when a message is received, it triggers the appropriate Cloud Run Job based on the job name defined during the job creation phase.
+   The Cloud Function is deployed using **Terraform**. It listens to the Pub/Sub topic and triggers the appropriate Cloud Run Job based on the workflow specified in the message.
 
 2. **Pub/Sub Topic**:
-   The topic used by the Cloud Function is managed via Terraform. This topic is where you publish messages containing extra arguments for the workflow.
+   The topic used by the Cloud Function is managed via Terraform. This topic is where you publish messages to trigger workflows with specific parameters.
+
+3. **Environment Variables**:
+   The Cloud Function uses environment variables to map workflow names to their corresponding Cloud Run Job names. These are set during deployment and follow the format `WORKFLOW_NAME_JOB_NAME`.
 
 ---
 
@@ -246,16 +260,69 @@ make deploy-jobs
 
 This command will update the deployed Cloud Run Jobs for the defined workflows. The workflow for each job is defined during the infrastructure setup phase.
 
-### **4. Verify Deployment**
+### **4. Deploy HTTP-triggered Cloud Functions**
+
+To deploy the Push Feature Request Function, use the following command:
+
+```bash
+make deploy-http-functions
+```
+
+This command will deploy the HTTP-triggered Cloud Functions, including the Push Feature Request Function.
+
+### **5. Verify Deployment**
 
 After deployment, verify that:
 - The Pub/Sub topic is created
-- The Cloud Function is deployed and linked to the Pub/Sub topic
+- The Cloud Functions (Workflow Trigger and Push Feature Request) are deployed and configured correctly
 - The Cloud Run Jobs are created and ready to be triggered
 - IAM permissions are correctly set
 
 You can use the Google Cloud Console or `gcloud` CLI commands to verify these components.
 
+---
+
+## **Push Feature Request Function**
+
+The Push Feature Request Function is an HTTP-triggered Cloud Function that handles requests to initiate the push feature workflow. It's located in `infrastructure/workflow_http_pub/push_feature_request/main.py`.
+
+### Purpose
+This function receives HTTP POST requests, processes the payload, and publishes a message to a Pub/Sub topic to trigger the push feature workflow.
+
+### Parameters
+The function accepts the following parameters in the JSON payload:
+
+- `git_url` (required): The URL of the Git repository.
+- `feature_request` (required): The description of the feature to be implemented.
+- `source_branch` (optional): The source branch to create the feature from.
+- `feature_branch` (optional): The name of the new feature branch.
+- `author` (optional): The author of the feature request.
+- `git_user` (optional): The Git username for commits.
+- `git_email` (optional): The Git email for commits.
+- `agent` (optional): The agent to use for the workflow.
+- `model` (optional): The model to use for the workflow.
+- `provider` (optional): The provider to use for the workflow.
+- `extra_flags` (optional): Any additional flags for the workflow.
+
+### Usage Example
+To trigger the push feature workflow using this function, send a POST request with a JSON payload. Here's an example using `curl`:
+
+```bash
+curl -X POST https://YOUR_REGION-YOUR_PROJECT_ID.cloudfunctions.net/push_feature_request \
+     -H "Content-Type: application/json" \
+     -d '{
+           "git_url": "https://github.com/example/repo.git",
+           "feature_request": "Add a new login page",
+           "source_branch": "main",
+           "author": "John Doe",
+           "git_user": "johndoe",
+           "git_email": "john@example.com"
+         }'
+```
+
+Replace `YOUR_REGION` and `YOUR_PROJECT_ID` with your actual Google Cloud region and project ID.
+
+The function will process this request, create a message with the provided parameters, and publish it to the specified Pub/Sub topic, which will then trigger the push feature workflow.
 
 ---
 
