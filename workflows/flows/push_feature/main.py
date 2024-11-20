@@ -14,8 +14,11 @@ from random import randint
 
 MAX_RETRIES = 3
 DEFAULT_AGENT = "orchestrator"
-DEFAULT_MODEL = "claude-3-5-sonnet-latest"
-DEFAULT_PROVIDER = "anthropic"
+# DEFAULT_MODEL = "claude-3-5-sonnet-latest"
+# DEFAULT_PROVIDER = "anthropic"
+DEFAULT_PROVIDER = "openai"
+DEFAULT_MODEL = "gpt4o"
+
 PROTECTED_BRANCH_NAMES = ("main", "master", "develop")
 
 logger = get_logger(__name__)

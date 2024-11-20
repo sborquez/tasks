@@ -52,4 +52,9 @@ variable "anthropic_api_key_value" {
   sensitive = true
 }
 
+variable "openai_api_key_value" {
+  description = "An API key for the OpenAI API to be stored in Secret Manager"
+  type        = string
+  sensitive = true
+}
 // Other variables

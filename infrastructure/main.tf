@@ -84,6 +84,7 @@ module "push_feature_job" {
   secrets = {
     GIT_TOKEN           = google_secret_manager_secret.git_token.secret_id
     ANTHROPIC_API_KEY   = google_secret_manager_secret.anthropic_api_key.secret_id
+    OPENAI_API_KEY      = google_secret_manager_secret.openai_api_key.secret_id
   }
 
   depends_on = [
@@ -162,6 +163,33 @@ resource "google_secret_manager_secret_iam_member" "anthropic_api_key_access" {
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
   depends_on = [google_secret_manager_secret.anthropic_api_key]
+}
+
+# OpenAI API Key
+resource "google_secret_manager_secret" "openai_api_key" {
+  secret_id = "openai-api"
+  replication {
+    auto {}
+  }
+
+  depends_on = [
+    google_project_service.project_services,
+    time_sleep.wait_for_api_activation,
+  ]
+}
+
+
+resource "google_secret_manager_secret_version" "openai_api_key" {
+  secret      = google_secret_manager_secret.openai_api_key.id
+  secret_data = var.openai_api_key_value
+  depends_on  = [google_secret_manager_secret.openai_api_key]
+}
+
+resource "google_secret_manager_secret_iam_member" "openai_api_key_access" {
+  secret_id = google_secret_manager_secret.openai_api_key.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  depends_on = [google_secret_manager_secret.openai_api_key]
 }
 
 # IAM permissions for Cloud Function to trigger Cloud Run Jobs

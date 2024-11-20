@@ -57,6 +57,7 @@ def run_single_prompt(working_dir: str, prompt: str, provider: str, model: str, 
     os.chdir(working_dir)
     prompt = f"I received the following feature request: <feature_request>{prompt}</feature_request>. Implement the feature delegating the work if necessary."
     output = pluscoder([
+        "--dev",
         "--no-init",
         "--user_input", prompt,
         "--provider", provider,
