@@ -1,0 +1,15 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build',
+    '-t', '${_IMAGE_NAME}',
+    '--build-arg', 'PIP_TOKEN=${_PIP_TOKEN}',
+    '--build-arg', 'PLUSCODER_TOKEN=${_PLUSCODER_TOKEN}',
+    '.',
+  ]
+images: ['${_IMAGE_NAME}']
+
+substitutions:
+  _IMAGE_NAME: gcr.io/${PROJECT_ID}/workflows:latest
+  _PIP_TOKEN: ''
+  _PLUSCODER_TOKEN: ''

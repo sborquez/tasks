@@ -69,10 +69,10 @@ To set up the project environment and install dependencies, follow these steps:
 - [x] **utility tasks**: Utility tasks for notifications and logging.
 - [x] **hello_world**: Simple workflow to clone a repository, create a new branch, and push changes.
 - [x] **Dockers Deployment**: Build and push Docker images for workflows.
-- [ ] **Cloud Infrastructure**: Set up Cloud Run Jobs, Pub/Sub, and Cloud Function for workflow orchestration with Terraform.
-- [ ] **Cloud Function Trigger**: Listen to Pub/Sub messages and trigger Cloud Run Jobs with extra arguments.
-- [ ] **pluscoder tasks**: Interact with PlusCoder for specific development tasks.
-- [ ] **push_feature**: Automate the process of cloning a repository, creating a new feature branch, adding changes, and pushing to the branch.
+- [x] **Cloud Infrastructure**: Set up Cloud Run Jobs, Pub/Sub, and Cloud Function for workflow orchestration with Terraform.
+- [x] **Cloud Function Trigger**: Listen to Pub/Sub messages and trigger Cloud Run Jobs with extra arguments.
+- [x] **pluscoder tasks**: Interact with PlusCoder for specific development tasks.
+- [x] **push_feature**: Automate the process of cloning a repository, creating a new feature branch, adding changes, and pushing to the branch.
 - [ ] **resolve_issue**: Automate resolving a GitLab issue, including pushing a branch with changes, creating a merge request, and notifying completion.
 
 
@@ -240,15 +240,28 @@ This command runs the necessary `terraform apply` commands, setting up:
 - IAM permissions
 - Required APIs
 
-### **2. Build and Push Docker Image with Cloud Build**
+### **2. Build and Push Docker Image**
 
-To build and push the Docker image for the workflows, use the following command:
+#### Prerequisites
+Ensure you have the required tokens:
+- PIP_TOKEN: For package installation
+- PLUSCODER_TOKEN: For PlusCoder integration
 
+#### Using Cloud Build
+The project uses Cloud Build with configuration from `cloudbuild.yaml`. To build:
+
+1. Set required tokens:
+```bash
+export PIP_TOKEN=your_pip_token
+export PLUSCODER_TOKEN=your_pluscoder_token
+```
+
+2. Build and push:
 ```bash
 make build-and-push
 ```
 
-This will build the Docker image and push it to Google Container Registry.
+This builds using Cloud Build configuration and pushes to Google Container Registry.
 
 ### **3. Deploy Cloud Run Jobs**
 
