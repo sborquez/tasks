@@ -92,6 +92,8 @@ module "push_feature_job" {
     google_secret_manager_secret_version.git_token,
     google_secret_manager_secret.anthropic_api_key,
     google_secret_manager_secret_version.anthropic_api_key,
+    google_secret_manager_secret.openai_api_key,
+    google_secret_manager_secret_version.openai_api_key,
   ]
 }
 
@@ -165,9 +167,10 @@ resource "google_secret_manager_secret_iam_member" "anthropic_api_key_access" {
   depends_on = [google_secret_manager_secret.anthropic_api_key]
 }
 
+
 # OpenAI API Key
 resource "google_secret_manager_secret" "openai_api_key" {
-  secret_id = "openai-api"
+  secret_id = "openai-api-key"
   replication {
     auto {}
   }

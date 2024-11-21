@@ -21,6 +21,8 @@ ENV WORKFLOW_NAME="hello_world"
 ARG PLUSCODER_TOKEN
 ARG PIP_TOKEN
 ARG INSTALL_SCRIPT=https://gitlab.com/codematos/pluscoder-repository/-/raw/main/install.sh
+# Change shell to bash
+SHELL ["/bin/bash", "-c"]
 RUN curl -sSL $INSTALL_SCRIPT -o install.sh
 RUN bash install.sh -t $PLUSCODER_TOKEN -p $PIP_TOKEN -y -s
 

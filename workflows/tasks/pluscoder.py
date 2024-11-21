@@ -17,9 +17,10 @@ def _get_pluscoder() -> Callable:
     elif shutil.which("pluscoder"):
         logger.debug("PlusCoder found as a binary")
         _pluscoder = ["pluscoder"]
-    elif shutil.which("pluscoder-2.3.0"):
-        logger.debug("PlusCoder found as a binary")
-        _pluscoder = ["pluscoder-2.3.0"]
+    # Find PlusCoder UV
+    elif os.path.exists(os.path.join(os.path.expanduser("~"), ".local/bin/pluscoder")):
+        logger.debug("PlusCoder found as a UV tool")
+        _pluscoder = [os.path.join(os.path.expanduser("~"), ".local/bin/pluscoder")]
     else:
         raise ImportError("PlusCoder not found")
 
