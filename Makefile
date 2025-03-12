@@ -60,11 +60,11 @@ deploy-jobs:
 	gcloud run jobs update hello-world-job \
 	    --image gcr.io/$(PROJECT_ID)/$(WORKFLOW_IMAGE):$(WORKFLOW_TAG) \
 	    --region $(REGION) \
-	    --set-env-vars WORKFLOW_NAME=hello_world \
+	    --set-env-vars WORKFLOW_NAME=hello_world,LOG_LEVEL=INFO \
 	    --max-retries 3
 	@echo "Updating push-feature-job..."
 	gcloud run jobs update push-feature-job \
 	    --image gcr.io/$(PROJECT_ID)/$(WORKFLOW_IMAGE):$(WORKFLOW_TAG) \
 	    --region $(REGION) \
-	    --set-env-vars WORKFLOW_NAME=push_feature \
+	    --set-env-vars WORKFLOW_NAME=push_feature,LOG_LEVEL=INFO \
 	    --max-retries 3

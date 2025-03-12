@@ -7,7 +7,7 @@ from workflows.tasks.git import (
     commit_changes,
 )
 from workflows.tasks.utility import create_temporary_dir, delete_temporary_dir
-from workflows.tasks.pluscoder import run_single_prompt
+from workflows.tasks.pluscoder import add_pluscoder_gitignore, run_single_prompt, run_task_list_prompt
 from workflows.tasks.utils import sanitize_string
 from workflows import get_logger
 from random import randint
@@ -36,7 +36,8 @@ class Parameters(BaseModel):
     author: str | None = Field(description="Author name for configuration", default=None)
     git_user: str | None = Field(description="Git user name for configuration", default=None)
     git_email: str | None = Field(description="Git user email for configuration", default=None)
-    feature_request: str = Field(description="Feature request to be implemented")
+    # feature_request: str = Field(description="Feature request to be implemented")
+    task_list: str = Field(description="A list of tasks to be implemented")
     agent: str | None = Field(
         description="Name of the agent to use for PlusCoder", default=DEFAULT_AGENT
     )
@@ -59,7 +60,8 @@ def workflow(parameters: Parameters) -> None:
     author = parameters.author
     git_user = parameters.git_user
     git_email = parameters.git_email
-    feature_request = parameters.feature_request
+    # feature_request = parameters.feature_request
+    task_list = parameters.task_list
     agent = parameters.agent
     model = parameters.model
     provider = parameters.provider
@@ -76,7 +78,8 @@ def workflow(parameters: Parameters) -> None:
     if author:
         logger.debug(f"Author: {author}")
 
-    logger.debug(f"Feature Request: {feature_request}")
+    # logger.debug(f"Feature Request: {feature_request}")
+    logger.debug(f"Feature Request: {task_list}")
     logger.debug(f"Model: {model}")
     logger.debug(f"Provider: {provider}")
     logger.debug(f"Extra Flags: {extra_flags}")
@@ -99,10 +102,23 @@ def workflow(parameters: Parameters) -> None:
     branch = create_branch(repo_dir, feature_branch)
     retries = MAX_RETRIES
     logger.info(f"Running PlusCoder with {retries} retries")
+    # added_gitignore = add_pluscoder_gitignore(repo_dir)
+    # if added_gitignore:
+    #     logger.debug("Added .pluscoder/ to .gitignore")
+    #     commit_changes(repo_dir, just_add=True)
+
     while retries > 0:
-        result = run_single_prompt(
+        # result = run_single_prompt(
+        #     repo_dir,
+        #     feature_request,
+        #     provider,
+        #     model,
+        #     agent,
+        # )
+
+        result = run_task_list_prompt(
             repo_dir,
-            feature_request,
+            task_list,
             provider,
             model,
             agent,
