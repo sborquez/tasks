@@ -73,7 +73,7 @@ async def get_task_details(client: AsyncClient, task_id: str) -> TaskDetails:
         description=task.description,
         parameters_schema=json.loads(task.parameters_json_schema),
         result_schema=json.loads(task.result_json_schema),
-        cloud_run_job_name=task.cloud_run_job_name,
+        uri=task.uri,
     )
 
 async def user_has_access_to_task(client: AsyncClient, user_email: str, task_id: str) -> bool:

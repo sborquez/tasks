@@ -106,6 +106,8 @@ def _get_sorted_submodels(schema: dict) -> list[str]:
     depends: dict[str, list[str]] = defaultdict(list)
     enabler: dict[str, list[str]] = defaultdict(list)
     submodels_names = [ name for name in defs.keys() if 'properties' in defs[name] ]
+    if not submodels_names:
+        return []
     for name in submodels_names:
         definition = defs[name]
         for prop in definition['properties'].values():

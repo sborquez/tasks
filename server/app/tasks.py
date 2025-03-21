@@ -24,9 +24,9 @@ async def get_jobs_client() -> JobsAsyncClient:
     return JobsAsyncClient()
 
 
-async def submit_task(client: JobsAsyncClient, task: TaskDetails, job_id: str, parameters: BaseModel | None) -> None:
+async def execute_task(client: JobsAsyncClient, task: TaskDetails, job_id: str, parameters: BaseModel | None) -> None:
     """Create a Cloud Run Job for a task."""
-    full_job_name = task.cloud_run_job_name
+    full_job_name = task.uri
 
     parameters_values = {} if parameters is None else parameters.model_dump()
     parameters_values["job_id"] = job_id

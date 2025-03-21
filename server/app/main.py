@@ -13,7 +13,7 @@ from app.db import (
 )
 from app.tasks import (
     get_jobs_client,
-    submit_task,
+    execute_task,
 )
 from app.schema_validation import (
     validate_with_model_schema,
@@ -43,16 +43,17 @@ async def get_tasks(x_user_email: str = Depends(get_current_user), db: Firestore
     return tasks
 
 
-@app.post("/submit/{task_id}")
-async def submit(task_id: str, parameters: dict | None, x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep, run: CloudRunJobClient = CloudRunJobClientDep) -> JobCreate:
-    """Submit an task for a user, only if the user has access to it"""
+@app.post("/execute/{task_id}")
+async def execute(task_id: str, parameters: dict | None, x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep, run: CloudRunJobClient = CloudRunJobClientDep) -> JobCreate:
+    """Execute a task for a user, only if the user has access to it"""
     if not await user_has_access_to_task(db, x_user_email, task_id):
         raise HTTPException(status_code=404, detail="Task not found")
 
     # Validate parameters
     task = await get_task_details(db, task_id)
     try:
-        parameters_ = validate_with_model_schema(task.parameters_schema, parameters or {})
+        parameters_ = parameters or {}
+        parameters_model = validate_with_model_schema(task.parameters_schema, parameters_)
     except ValueError:
         raise HTTPException(status_code=402, detail="Invalid parameters")
 
@@ -61,15 +62,15 @@ async def submit(task_id: str, parameters: dict | None, x_user_email: str = Depe
         db,
         x_user_email,
         task_id,
-        parameters_,
+        parameters_model,
     )
 
     # Submit job to Cloud Run Job
-    await submit_task(
+    await execute_task(
         run,
         task,
         job_create.id,
-        parameters_,
+        parameters_model,
     )
     return job_create
 
