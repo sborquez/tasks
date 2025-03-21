@@ -109,7 +109,7 @@ def create_or_check_job(client: Client, job_id: str, task_id: str, parameters: B
     job_ref.set(
         CreateJob(
             task_id=task_id,
-            parameters_json_value=json.dumps(parameters.model_dump_json()),
+            parameters_json_value=parameters.model_dump_json(),
         ).model_dump()
     )
     exists = False

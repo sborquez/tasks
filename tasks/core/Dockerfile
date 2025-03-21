@@ -5,9 +5,9 @@ FROM python:3.12-slim AS base
 RUN apt-get update && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
-
-# Set the working directory in the container
-
 COPY . ./core
-
 RUN pip install --no-cache-dir ./core
+
+# Run the tasks
+ENV TASK_COMMAND=tasks-run
+ENTRYPOINT ["./core/entrypoint.sh"]
