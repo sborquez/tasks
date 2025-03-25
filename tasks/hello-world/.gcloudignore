@@ -1,0 +1,42 @@
+# Terraform directories and files to ignore
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Terraform variable files (local overrides or sensitive data)
+*.tfvars
+
+# Log files that should not be deployed
+*.log
+crash.log
+
+# Git-related files and directories that are not needed in the deployment
+.git/
+.gitignore
+
+# Cloud configuration files
+.gcloudignore
+
+# IDE and editor-specific directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# MacOS-specific files
+.DS_Store
+
+# Python build artifacts
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.whl
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Ignoring sensitive environment files (if applicable)
+.env
+.env.*
