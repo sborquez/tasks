@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tasks-core"
+version = "0.1.0"
+description = "A core library for workflows tasks"
+requires-python = ">=3.12"
+authors = [
+    { name = "Sebastián Bórquez", email = "sebastian.borquez.g@gmail.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = ["workflows", "tasks", "core"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+]
+dynamic = ["dependencies"]
+
+[project.scripts]
+tasks-run = "tasks:run"
+tasks-register = "tasks:register"
+
+[tool.setuptools]
+packages = ["tasks"]
+package-dir = {"" = "."}
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}
