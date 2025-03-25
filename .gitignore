@@ -1,0 +1,44 @@
+# Project-specific files
+PROJECT_OVERVIEW.md
+CODING_GUIDELINES.md
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDEs and editors
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Environment variables
+.env
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Miscellaneous
+.DS_Store
+Thumbs.db
+
+# Cloud Functions
+infrastructure/**/*.zip
