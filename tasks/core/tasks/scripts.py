@@ -6,6 +6,7 @@ import json
 from tasks.types import TaskWithJobIdType, JobIDType, BaseParameters, BaseResult
 from tasks.db import create_task, get_firestore_client
 from tasks.utils import get_logger, normalize_string
+from tasks.config import settings
 
 
 logger = get_logger(__name__)
@@ -61,11 +62,20 @@ def parse_register_parameters(task_name: str) -> str:
     # Add job_id argument
     parser.add_argument(
         '--task_uri',
-        required=True,
+        required=False,
         help="Identifier to the task location. e.g. the Cloud Run job name with the format 'projects/{project_id}/locations/{location}/jobs/{job_id}'",
+        default=None,
     )
     args = parser.parse_args()
-    return args.task_uri
+    task_uri = args.task_uri
+    if task_uri is None:
+        project_id = settings.TASK_PROJECT_ID
+        region = settings.TASK_REGION
+        job_name = settings.TASK_JOB_NAME
+        if any([project_id is None, region is None, job_name is None]):
+            raise ValueError("TASK_PROJECT_ID, TASK_REGION, and TASK_JOB_NAME must be set in the environment or passed as arguments")
+        task_uri = f"projects/{project_id}/locations/{region}/jobs/{job_name}"
+    return task_uri
 
 
 def register_task(task_pipeline: TaskWithJobIdType, parameters_model: type[BaseParameters], results_model: type[BaseResult]) -> None:

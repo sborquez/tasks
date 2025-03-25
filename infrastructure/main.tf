@@ -28,7 +28,7 @@ resource "google_project_service" "project_services" {
 # Service Account
 ## Create a service account for tasks jobs
 resource "google_service_account" "tasks_jobs_service_account" {
-  account_id   = "tasks-jobs-service-account"
+  account_id   = "tasks-jobs-sa"
   display_name = "Tasks Jobs Service Account"
   project      = var.project_id
 
@@ -40,7 +40,7 @@ resource "google_service_account" "tasks_jobs_service_account" {
 
 ## Create a service account for tasks API server
 resource "google_service_account" "tasks_api_service_account" {
-  account_id   = "tasks-api-service-account"
+  account_id   = "tasks-api-sa"
   display_name = "Tasks API Service Account"
   project      = var.project_id
 

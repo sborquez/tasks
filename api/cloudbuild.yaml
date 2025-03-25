@@ -5,8 +5,8 @@ substitutions:
   _FIRESTORE_DATABASE: "(default)"
   _REPOSITORY_NAME: "tasks-images"
   _IMAGE_NAME: "tasks-api-server"
-  _SERVICE_ACCOUNT: "tasks-api-service-account"
-  _SERVICE_ACCOUNT_JOBS: "tasks-jobs-service-account"
+  _SERVICE_ACCOUNT: "tasks-api-sa"
+  _SERVICE_ACCOUNT_JOBS: "tasks-jobs-sa"
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
@@ -34,7 +34,6 @@ steps:
       '--image', '$_REGION-docker.pkg.dev/${_PROJECT_ID}/$_REPOSITORY_NAME/$_IMAGE_NAME:latest',
       '--region', '$_REGION',
       '--platform', 'managed',
-      '--allow-unauthenticated',
       '--service-account', '$_SERVICE_ACCOUNT@${_PROJECT_ID}.iam.gserviceaccount.com',
       '--set-env-vars', 'FIRESTORE_DATABASE=$_FIRESTORE_DATABASE,FIRESTORE_PROJECT_ID=${_PROJECT_ID},TASKS_PROJECT_ID=${_PROJECT_ID},TASKS_LOCATION=$_REGION,TASKS_SERVICE_ACCOUNT_EMAIL=$_SERVICE_ACCOUNT_JOBS@${_PROJECT_ID}.iam.gserviceaccount.com'
     ]

@@ -1,2 +1,2 @@
-from .main import task, Parameters, Results  # noqa: F401
+from .main import hello_world as task, Parameters, Results  # noqa: F401
 

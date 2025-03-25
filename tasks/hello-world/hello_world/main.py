@@ -32,10 +32,8 @@ def say_hello(name: str) -> str:
     return f"Hello, {name}!"
 
 
-@task(name="Hello World", description="A hello world task")
+@task(name="Hello World", description="A hello world task")  # type: ignore
 def hello_world(parameters: Parameters) -> Results:
     name = get_name(parameters.name or "")
     message = say_hello(name)
     return Results(message=message)
-
-task = hello_world

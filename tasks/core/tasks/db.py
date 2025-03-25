@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import json
 from typing import TypeVar
 
 from google.cloud.firestore import Client
@@ -62,15 +61,19 @@ def get_context() -> _Context:
 
 def get_firestore_client() -> Client:
     if settings.FIRESTORE_EMULATOR_HOST:
-        logger.debug("Using Firestore emulator")
+        logger.info("Using Firestore emulator")
         client = Client(
             project=settings.FIRESTORE_PROJECT_ID,
+            database=settings.FIRESTORE_DATABASE,
             credentials=None,
         )
         client._emulator_host = settings.FIRESTORE_EMULATOR_HOST
     else:
-        logger.debug("Using Firestore")
-        client = Client()
+        logger.info(f"Using Firestore project {settings.FIRESTORE_PROJECT_ID}")
+        client = Client(
+            project=settings.FIRESTORE_PROJECT_ID,
+            database=settings.FIRESTORE_DATABASE,
+        )
     return client
 
 

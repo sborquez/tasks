@@ -9,7 +9,12 @@ class Settings(BaseSettings):
     FIRESTORE_PROJECT_ID: str = "demo-project"
     FIRESTORE_DATABASE: str = "(default)"
 
-    FIRESTORE_EMULATOR_HOST: str = "localhost:8080"
+    FIRESTORE_EMULATOR_HOST: str | None = None
+
+    # Task info
+    TASK_PROJECT_ID: str | None = None
+    TASK_REGION: str | None = None
+    TASK_JOB_NAME: str | None = None
 
 
 settings = Settings()

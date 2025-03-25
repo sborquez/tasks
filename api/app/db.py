@@ -25,10 +25,16 @@ async def get_firestore_client() -> AsyncClient:
         print("Using Firestore emulator")
         client = AsyncClient(
             project=settings.FIRESTORE_PROJECT_ID,
+            database=settings.FIRESTORE_DATABASE,
             credentials=None,
         )
         client._emulator_host = settings.FIRESTORE_EMULATOR_HOST
         return client
+    else:
+        client = AsyncClient(
+            project=settings.FIRESTORE_PROJECT_ID,
+            database=settings.FIRESTORE_DATABASE,
+        )
     return AsyncClient()
 
 

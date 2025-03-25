@@ -11,7 +11,6 @@ RUN pip install --no-cache-dir ./core
 # Set needed environment variables
 ENV FIRESTORE_PROJECT_ID=
 ENV FIRESTORE_DATABASE=
-ENV FIRESTORE_EMULATOR_HOST=
 
 # Run the tasks
 ENV TASK_COMMAND=tasks-run
