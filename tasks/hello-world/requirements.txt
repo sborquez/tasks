@@ -1,0 +1,5 @@
+# Core tasks
+tasks-core>=0.1.0
+
+# Additional requirements
+names_generator==0.2.0

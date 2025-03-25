@@ -13,9 +13,8 @@ locals {
     "run.googleapis.com",
     "cloudbuild.googleapis.com",
     "containerregistry.googleapis.com",
-    "cloudfunctions.googleapis.com",
-    "pubsub.googleapis.com",
     "secretmanager.googleapis.com",
+    "firestore.googleapis.com",
   ]
 }
 
@@ -26,154 +25,110 @@ resource "google_project_service" "project_services" {
   disable_on_destroy = false
 }
 
-resource "time_sleep" "wait_for_api_activation" {
+# Service Account
+## Create a service account for tasks jobs
+resource "google_service_account" "tasks_jobs_service_account" {
+  account_id   = "tasks-jobs-sa"
+  display_name = "Tasks Jobs Service Account"
+  project      = var.project_id
+
+  depends_on = [
+    google_project_service.project_services
+  ]
+}
+
+
+## Create a service account for tasks API server
+resource "google_service_account" "tasks_api_service_account" {
+  account_id   = "tasks-api-sa"
+  display_name = "Tasks API Service Account"
+  project      = var.project_id
+
+  depends_on = [
+    google_project_service.project_services
+  ]
+}
+
+
+# Tasks Cloud Run Jobs
+## Artifact Registry Repository
+resource "google_artifact_registry_repository" "tasks_repository" {
+  repository_id = "tasks-images"
+  format        = "DOCKER"
+  location      = var.region
+  description   = "Docker repository for tasks Cloud Run Jobs container images"
+
+  labels = {
+    "app" = "tasks"
+  }
+
+  depends_on = [ google_project_service.project_services ]
+}
+
+## Bucket for Cloud Run Jobs Results
+resource "google_storage_bucket" "tasks_results_bucket" {
+  name     = "${var.project_id}-tasks-results-bucket"
+  location = var.region
+}
+
+resource "google_storage_bucket_iam_member" "tasks_bucket_access" {
+  bucket = google_storage_bucket.tasks_results_bucket.name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.tasks_jobs_service_account.email}"
+}
+
+resource "google_storage_bucket_object" "default_folder" {
+  name   = "default/"
+  content = "Default folder for results of tasks."
+  bucket = google_storage_bucket.tasks_results_bucket.name
+
+  depends_on = [google_storage_bucket.tasks_results_bucket]
+}
+
+# Firestore Database
+resource "google_firestore_database" "tasks_firestore_db" {
+  project     = data.google_project.current.project_id
+  name        = "(default)"
+  location_id = var.region
+  type        = "FIRESTORE_NATIVE"
+
   depends_on = [google_project_service.project_services]
-  create_duration = "60s"
 }
 
-module "workflow_trigger" {
-  source = "./modules/workflow_trigger"
 
-  project_id                  = var.project_id
-  region                      = var.region
-  pubsub_topic_name           = var.pubsub_topic_name
-  trigger_cloud_function_name = var.trigger_cloud_function_name
-  source_archive_path         = "./${var.trigger_cloud_function_name}-source.zip"
-  job_names                   = {
-    hello_world  = var.hello_world_job_name
-    push_feature = var.push_feature_job_name
-  }
-
-  depends_on = [
-    google_project_service.project_services,
-    time_sleep.wait_for_api_activation,
+locals {
+  collections = [
+    "users",
+    "tasks",
+    "jobs",
   ]
 }
+resource "google_firestore_document" "tasks_firestore_db_collections" {
+  project     = data.google_project.current.project_id
+  database    = google_firestore_database.tasks_firestore_db.name
+  for_each    = toset(local.collections)
+  collection  = each.key
+  document_id = "dummy"
 
-# Cloud Run Job
-## hello_world workflow
-module "hello_world_job" {
-  source = "./modules/workflow_job"
+  fields = "{}"
 
-  name             = var.hello_world_job_name
-  region           = var.region
-  docker_image_url = var.placeholder_docker_image_url
-  workflow_name    = "hello_world"
-  project_id       = var.project_id
-
-  secrets = {
-    GIT_TOKEN = google_secret_manager_secret.git_token.secret_id
-  }
-
-  depends_on = [
-    google_secret_manager_secret.git_token,
-    google_secret_manager_secret_version.git_token,
-  ]
+  depends_on = [google_firestore_database.tasks_firestore_db]
 }
 
-## push_feature workflow
-module "push_feature_job" {
-  source = "./modules/workflow_job"
-
-  name             = var.push_feature_job_name
-  region           = var.region
-  docker_image_url = var.placeholder_docker_image_url
-  workflow_name    = "push_feature"
-  project_id       = var.project_id
-
-  secrets = {
-    GIT_TOKEN           = google_secret_manager_secret.git_token.secret_id
-    ANTHROPIC_API_KEY   = google_secret_manager_secret.anthropic_api_key.secret_id
-  }
-
-  depends_on = [
-    google_secret_manager_secret.git_token,
-    google_secret_manager_secret_version.git_token,
-    google_secret_manager_secret.anthropic_api_key,
-    google_secret_manager_secret_version.anthropic_api_key,
-  ]
-}
-
-# Cloud Function to listen to HTTP and send a Pub/Sub message
-module "workflow_http_pub_push_feature" {
-  source = "./modules/workflow_http_pub"
-
-  project_id                    = var.project_id
-  region                        = var.region
-  publisher_cloud_function_name = "push_feature_request"
-  source_archive_path           = "./workflow_http_pub/push_feature_request-source.zip"
-  pubsub_topic_name             = var.pubsub_topic_name
-  target_workflow = "push_feature"
-
-  depends_on = [
-    google_project_service.project_services,
-    time_sleep.wait_for_api_activation,
-  ]
-}
-
-
-# Access GIT_TOKEN from Secret Manager
-resource "google_secret_manager_secret" "git_token" {
-  secret_id = "git-access-token"
-  replication {
-    auto {}
-  }
-
-  depends_on = [
-    google_project_service.project_services,
-    time_sleep.wait_for_api_activation,
-  ]
-}
-
-resource "google_secret_manager_secret_version" "git_token" {
-  secret      = google_secret_manager_secret.git_token.id
-  secret_data = var.git_token_value  # Using the input variable here
-  depends_on  = [google_secret_manager_secret.git_token]
-}
-
-resource "google_secret_manager_secret_iam_member" "git_token_access" {
-  secret_id = google_secret_manager_secret.git_token.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
-  depends_on = [google_secret_manager_secret.git_token]
-}
-
-# Anthropic API Key
-resource "google_secret_manager_secret" "anthropic_api_key" {
-  secret_id = "anthropic-api-key"
-  replication {
-    auto {}
-  }
-
-  depends_on = [
-    google_project_service.project_services,
-    time_sleep.wait_for_api_activation,
-  ]
-}
-
-resource "google_secret_manager_secret_version" "anthropic_api_key" {
-  secret      = google_secret_manager_secret.anthropic_api_key.id
-  secret_data = var.anthropic_api_key_value
-  depends_on  = [google_secret_manager_secret.anthropic_api_key]
-}
-
-resource "google_secret_manager_secret_iam_member" "anthropic_api_key_access" {
-  secret_id = google_secret_manager_secret.anthropic_api_key.id
-  role      = "roles/secretmanager.secretAccessor"
-  member    = "serviceAccount:${data.google_project.current.number}-compute@developer.gserviceaccount.com"
-  depends_on = [google_secret_manager_secret.anthropic_api_key]
-}
-
-# IAM permissions for Cloud Function to trigger Cloud Run Jobs
-resource "google_project_iam_member" "cloud_run_invoker" {
+resource "google_project_iam_binding" "tasks_firestore_db_access" {
   project = data.google_project.current.project_id
-  role    = "roles/run.invoker"
-  member  = "serviceAccount:${module.workflow_trigger.workflow_trigger_function_service_account_email}"
+  role    = "roles/datastore.user"
+  members = [
+    "serviceAccount:${google_service_account.tasks_jobs_service_account.email}",
+    "serviceAccount:${google_service_account.tasks_api_service_account.email}",
+  ]
 }
 
-# IAM permissions for Cloud Function to send Pub/Sub messages
-resource "google_project_iam_member" "pubsub_publisher" {
+# Cloud Jobs Launcher
+resource "google_project_iam_binding" "tasks_jobs_service_account_access" {
   project = data.google_project.current.project_id
-  role    = "roles/pubsub.publisher"
-  member  = "serviceAccount:${module.workflow_trigger.workflow_trigger_function_service_account_email}"
+  role    = "roles/run.developer"
+  members = [
+    "serviceAccount:${google_service_account.tasks_api_service_account.email}",
+  ]
 }

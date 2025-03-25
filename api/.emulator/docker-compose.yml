@@ -1,0 +1,24 @@
+version: '3.8'
+services:
+  firestore:
+    image: node:18
+    container_name: firestore_emulator
+    working_dir: /firestore
+    command: >
+      sh -c "apt-get update &&
+             apt-get install -y openjdk-17-jre &&
+             npm install -g firebase-tools &&
+             mkdir -p /firestore-data &&
+             firebase emulators:start --only firestore --project demo-project --import /firestore-data --export-on-exit"
+    ports:
+      - "8080:8080"
+      - "4000:4000"
+      - "4400:4400"
+      - "4500:4500"
+      - "9150:9150"
+    environment:
+      - FIRESTORE_EMULATOR_HOST=0.0.0.0:8080
+      - GCLOUD_PROJECT=demo-project
+    volumes:
+      - ./firebase.json:/firestore/firebase.json
+      - ./firestore-data:/firestore-data  # Persistent storage
