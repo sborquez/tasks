@@ -1,6 +1,0 @@
-{
-    "author": "Cloud Function Test",
-    "feature_request": "Add a main.py file that prints -Hello, World!-",
-    "git_url": "https://github.com/sborquez/studious-giggle.git",
-    "source_branch": "main"
-}
