@@ -1,0 +1,10 @@
+# --extra-index-url https://download.pytorch.org/whl/cu126
+
+# PyTorch stuff (will come from PyTorch's index)
+torch
+torchvision
+torchaudio
+
+# Core tasks
+tasks-core~=0.1.0
+whisperx[all]~=3.3.1

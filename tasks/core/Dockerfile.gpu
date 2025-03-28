@@ -1,0 +1,36 @@
+# Base stage - Install CUDA dependencies
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu20.04 AS base
+
+# Install build essentials and git for repository handling
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+RUN apt-get update \
+    && apt-get install -y \
+        git \
+        software-properties-common \
+        curl \
+        libssl-dev \
+        libffi-dev \
+        ca-certificates \
+        openssl \
+    && add-apt-repository -y ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.12 python3.12-dev \
+    && update-ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN ln -sf /usr/bin/python3.12 /usr/bin/python && \
+    ln -sf /usr/bin/python3.12 /usr/bin/python3 && \
+    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+
+COPY . ./core
+RUN pip install --no-cache-dir ./core
+
+# Set needed environment variables
+ENV FIRESTORE_PROJECT_ID=
+ENV FIRESTORE_DATABASE=
+
+# Run the tasks
+WORKDIR /
+ENV TASK_COMMAND=tasks-run
+ENTRYPOINT ["/core/entrypoint.sh"]
