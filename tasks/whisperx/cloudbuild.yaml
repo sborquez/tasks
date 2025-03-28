@@ -8,6 +8,7 @@ substitutions:
   _SERVICE_ACCOUNT: "tasks-jobs-sa"
   _TASK: "hello-world"
   _TASK_MODULE: "hello_world"
+  _SOURCE_MODEL_PATH: "gs://your-bucket-name/your-model-name"
 
 steps:
   # Step 1: Build Core Image
@@ -16,6 +17,7 @@ steps:
       'build',
       '--build-arg', 'CORE_IMAGE=$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:latest',
       '--build-arg', 'TASK_MODULE=$_TASK_MODULE',
+      '--build-arg', 'SOURCE_MODEL_PATH=$_SOURCE_MODEL_PATH',
       '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:latest',
       '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:$_VERSION',
       '.'

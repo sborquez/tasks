@@ -9,6 +9,7 @@ TASK=whisperx
 TASK_MODULE=whisperx
 TASK_IMAGE=tasks-whisperx
 TASK_IMAGE_TAG=latest
+SOURCE_MODEL_PATH=gs://$(PROJECT_ID)-tasks-models-bucket/whisperx
 
 .PHONY: venv
 venv:
@@ -28,4 +29,4 @@ build-locally:
 build-and-push-task:
 	@echo "Building and pushing Docker image for Tasks Job..."
 	gcloud builds submit --region=$(REGION) --config cloudbuild.yaml \
-		--substitutions=_PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION),_FIRESTORE_DATABASE=$(FIRESTORE_DATABASE),_REPOSITORY_NAME=$(REPOSITORY_NAME),_CORE_IMAGE=$(CORE_IMAGE),_SERVICE_ACCOUNT=$(TASK_JOBS_SA),_TASK=$(TASK),_TASK_MODULE=$(TASK_MODULE)
+		--substitutions=_PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION),_FIRESTORE_DATABASE=$(FIRESTORE_DATABASE),_REPOSITORY_NAME=$(REPOSITORY_NAME),_CORE_IMAGE=$(CORE_IMAGE),_SERVICE_ACCOUNT=$(TASK_JOBS_SA),_TASK=$(TASK),_TASK_MODULE=$(TASK_MODULE),_TASK_IMAGE=$(TASK_IMAGE),_TASK_IMAGE_TAG=$(TASK_IMAGE_TAG),_SOURCE_MODEL_PATH=$(SOURCE_MODEL_PATH)
