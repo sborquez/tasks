@@ -75,7 +75,7 @@ resource "google_storage_bucket_iam_member" "tasks_models_bucket_access" {
   bucket = google_storage_bucket.tasks_models_bucket.name
   role   = "roles/storage.objectViewer"
   # Default cloud build service account
-  member = "serviceAccount:${google_project.project_number}@cloudbuild.gserviceaccount.com"
+  member = "serviceAccount:${data.google_project.current.number}@cloudbuild.gserviceaccount.com"
 }
 
 ## Bucket for Cloud Run Jobs Results
