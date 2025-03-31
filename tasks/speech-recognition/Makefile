@@ -5,9 +5,9 @@ REPOSITORY_NAME=tasks-images
 CORE_IMAGE=tasks-core
 CORE_IMAGE_TAG=latest
 TASK_JOBS_SA=tasks-jobs-sa
-TASK=whisperx
-TASK_MODULE=whisperx
-TASK_IMAGE=tasks-whisperx
+TASK=speech-recognition
+TASK_MODULE=speech_recognition
+TASK_IMAGE=tasks-speech-recognition
 TASK_IMAGE_TAG=latest
 SOURCE_MODEL_PATH=gs://$(PROJECT_ID)-tasks-models-bucket/whisperx
 

@@ -1,0 +1,3 @@
+# Core tasks
+tasks-core~=0.1.0
+whisperx~=3.3.1

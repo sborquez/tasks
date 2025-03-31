@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tasks-whisperx"
+name = "tasks-speech-recognition"
 version = "0.1.0"
 description = "Speech recognition and spearker diarization tasks with WhisperX"
 requires-python = ">=3.10"
@@ -20,7 +20,7 @@ classifiers = [
 dynamic = ["dependencies"]
 
 [tool.setuptools]
-packages = ["whisperx"]
+packages = ["speech_recognition"]
 package-dir = {"" = "."}
 
 [tool.setuptools.dynamic]
