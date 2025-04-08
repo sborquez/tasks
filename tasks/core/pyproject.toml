@@ -22,6 +22,7 @@ dynamic = ["dependencies"]
 [project.scripts]
 tasks-run = "tasks:run"
 tasks-register = "tasks:register"
+tasks-serve = "tasks:serve"
 
 [tool.setuptools]
 packages = ["tasks"]
