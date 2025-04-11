@@ -1,13 +1,11 @@
 
-# **Workflows - Automated Tasks with Python**
+# **Tasks - Automated Tasks with Python**
 
-This project, named **Workflows**, implements a framework to automate workflows with Python.
+The tasks are designed to handle various sequential steps to achieve a task, such as pushing features, creating pull requests, generating images, etc. These workflows run as **Cloud Run Jobs** on Google Cloud or asynchronously triggered **Vertex AI Endpoints** (for GPU tasks).
 
-The workflows are designed to handle various sequential steps to achieve a task such as pushing features, creating pull requests, and generating image, etc. These workflows run as **Cloud Run Jobs** on Google Cloud, or asynchronously triggered **Vertex AI Endpoints** (for GPU tasks).
+An API server is included to handle the available workflows, their parameters, and results schemas so you can integrate them into your own applications. The API server triggers the workflows and manages their execution and results.
 
-An API server is included to handle the available workflows and their parameters and results schemas, so you can integrate them into your own applications. The API server is used to trigger the workflows and manage their execution and results.
-
-      Note: The Vertex AI Endpoints are not yet implemented, but the code is ready for creating a HTTP endpoint.
+      Note: The Vertex AI Endpoints are not yet implemented, but the code is ready for creating an HTTP endpoint.
       We only lack the deployment of the model to the endpoint and registration of the endpoint in Firestore.
 
 
@@ -16,7 +14,7 @@ An API server is included to handle the available workflows and their parameters
 ## **Project Structure**
 
 ```plaintext
-workflows/
+tasks/
 ├── infrastructure/           # Terraform files for infrastructure
 │   ├── main.tf
 │   ├── variables.tf
@@ -73,10 +71,10 @@ Before running the `Makefile` commands, ensure you have the following prerequisi
    ```
 
    This command will set up the necessary resources in GCP:
-   * Enable neccessary APIs
-   * Service Account and IAM permissions for API server and workflows tasks
+   * Enable necessary APIs
+   * Service Account and IAM permissions for API server and tasks
    * Firestore database
-   * Bucket for storing workflow results and models weights
+   * Bucket for storing workflow results and model weights
 
 2. Deploy the API server:
 
@@ -85,13 +83,13 @@ Before running the `Makefile` commands, ensure you have the following prerequisi
    ```
    This command will build the **API Server** Docker image and push it to Google Container Registry. It will also deploy the API server to **Cloud Run Service**.
 
-3. Build base images for workflows tasks:
+3. Build base images for tasks:
 
    ```bash
    make build-and-push-task-core
    ```
 
-   This command will build the Docker images for the workflows tasks (`tasks-core`) and push them to Google Container Registry. These images (`cpu` and `gpu`) will be used to build the specific tasks images.
+   This command will build the Docker images for the tasks (`tasks-core`) and push them to Google Container Registry. These images (`cpu` and `gpu`) will be used to build the specific tasks images.
 
 4. Build and push the Docker image for a task, repeating this step for each task that you want to deploy:
 
@@ -100,11 +98,11 @@ Before running the `Makefile` commands, ensure you have the following prerequisi
    make build-and-push-task
    ```
 
-   This will build the Docker image for the task and push it to Google Container Registry. The task will be registered in Firestore and ready to be used in workflows. Depending on the task, this will deploy the task to **Cloud Run Jobs** or **Vertex AI Endpoints**.
+   This will build the Docker image for the task and push it to the Google Container Registry. The task will be registered in Firestore and ready to be used in workflows. Depending on the task, this will deploy it to **Cloud Run Jobs** or **Vertex AI Endpoints**.
 
 ## **Add a New Task**
 
-To add a new task, create a new directory under `tasks/` and implement the task logic in Python. You can copy the `hello-world` task as a template for `cpu` tasks, or copy the `whisperx` (`(wip) hello-world-gpu`) task as a template for `gpu` tasks.
+To add a new task, create a directory under `tasks/` and implement the task logic in Python. You can copy the `hello-world` task as a template for `cpu` tasks, or copy the `whisperx` (`(wip) hello-world-gpu`) task as a template for `gpu` tasks.
 
 Suppose you want to create a new task called `my-task`:
 1. Copy the `hello-world` task directory to `my-task`:
