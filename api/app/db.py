@@ -57,6 +57,7 @@ async def list_user_tasks(client: AsyncClient, user_email: str) -> list[Task]:
         task = _validate_firestore_document(task_doc, TaskDocument)
         tasks.append(
             Task(
+                id=task.id,
                 name=task.name,
                 description=task.description,
                 # From json.dumps(Parameters.schema_json())

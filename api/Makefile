@@ -9,7 +9,7 @@ run-dev:
 	export FIRESTORE_EMULATOR_HOST=localhost:8080
 	export GCLOUD_PROJECT=demo-project
 	export LOG_LEVEL=DEBUG
-	fastapi dev app/main.py --reload --port 5000
+	fastapi dev app/main.py --reload --port 8000
 
 .PHONY: start-emulator
 start-emulator:	## Start the firestore emulator
