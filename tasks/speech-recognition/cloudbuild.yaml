@@ -1,0 +1,70 @@
+substitutions:
+  _PROJECT_ID: "your-project-id"
+  _REGION: "us-central1"
+  _FIRESTORE_DATABASE: "(default)"
+  _REPOSITORY_NAME: "tasks-images"
+  _CORE_IMAGE: "tasks-core"
+  _VERSION: "0.1.0"
+  _SERVICE_ACCOUNT: "tasks-jobs-sa"
+  _TASK: "hello-world"
+  _TASK_MODULE: "hello_world"
+  _SOURCE_MODEL_PATH: "gs://your-bucket-name/your-model-name"
+
+steps:
+  # Step 1: Build Core Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '--build-arg', 'CORE_IMAGE=$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:latest',
+      '--build-arg', 'TASK_MODULE=$_TASK_MODULE',
+      '--build-arg', 'SOURCE_MODEL_PATH=$_SOURCE_MODEL_PATH',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:latest',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:$_VERSION',
+      '.'
+    ]
+
+  # Step 2: Push Core Image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:latest']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:$_VERSION']
+
+  # Step 3: Create Vertex AI Endpoint (TODO)
+
+  # Step 4: Deploy Task to Cloud Run Job
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run',
+      'jobs',
+      'deploy',
+      'tasks-$_TASK-cr',
+      '--image', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/tasks-$_TASK:latest',
+      '--service-account', '$_SERVICE_ACCOUNT@$_PROJECT_ID.iam.gserviceaccount.com',
+      '--region', '$_REGION',
+      '--labels', 'task=$_TASK,app=tasks',
+      '--set-env-vars', 'FIRESTORE_PROJECT_ID=$_PROJECT_ID,FIRESTORE_DATABASE=$_FIRESTORE_DATABASE,TASK_PROJECT_ID=$_PROJECT_ID,TASK_REGION=$_REGION,TASK_JOB_NAME=tasks-$_TASK-cr',
+    ]
+
+  # Step 5: Execute Task to Cloud Run Job with register command
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run',
+      'jobs',
+      'execute',
+      'tasks-$_TASK-cr',
+      '--region', '$_REGION',
+      '--wait',
+      '--update-env-vars=TASK_COMMAND=tasks-register'
+    ]
+
+  # Step 6: Delete Task to Cloud Run Job
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: [
+      'run',
+      'jobs',
+      'delete',
+      'tasks-$_TASK-cr',
+      '--region', '$_REGION',
+      '--quiet'
+    ]

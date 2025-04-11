@@ -3,6 +3,9 @@ import importlib
 import os
 import json
 
+from pydantic import BaseModel, Field
+from fastapi import FastAPI
+
 from tasks.types import TaskWithJobIdType, JobIDType, BaseParameters, BaseResult
 from tasks.db import create_task, get_firestore_client
 from tasks.utils import get_logger, normalize_string
@@ -183,6 +186,126 @@ def run_task(task_pipeline: TaskWithJobIdType, parameters_model: type[BaseParame
     logger.info(f"Results: {results}")
 
 
+
+def build_request_parameters(parameters_model: type[BaseParameters]) -> type:
+    """
+    Define a task BaseParameters model for a endpoint.
+
+    Parameters:
+    -----------
+    parameters_model: type[BaseParameters]
+        Parameters model for the task.
+
+    Returns:
+    --------
+    type
+        A BaseParameters model class for an endpoint.
+    """
+
+    class EndpointParameters(BaseModel):
+        """
+        A class representing the parameters for a task.
+        Inherits from the provided parameters_model.
+        """
+        job_id: JobIDType = Field(description="The job ID")
+
+    class TaskEndpointBody(BaseModel):
+        """
+        A class representing the request parameters for a task.
+        Inherits from the provided parameters_model.
+        """
+        instances: list[parameters_model] = Field(  # type: ignore
+            description="List of instances to be processed by the task.",
+        )
+        parameters: EndpointParameters
+
+    return TaskEndpointBody
+
+
+def serve_task(task_pipeline: TaskWithJobIdType, parameters_model: type[BaseParameters], results_model: type[BaseResult]) -> None:
+    """
+    Create and serve a FastAPI app for the task pipeline.
+
+    Parameters:
+    -----------
+    task_pipeline: TaskWithJobIdType
+        Task pipeline function.
+    parameters_model: type[BaseParameters]
+        Parameters model for the task.
+    results_model: type[BaseResult]
+        Results model for the task.
+    Returns:
+    --------
+    None
+    """
+    task_name = task_pipeline.task_name if hasattr(task_pipeline, "task_name") else task_pipeline.__name__
+    logger.info(f"Serving task {task_name}")
+    # Parse and validate input parameters
+    TaskEndpointBody = build_request_parameters(parameters_model)
+
+    port = int(os.environ.get("AIP_HTTP_PORT", settings.SERVER_PORT))
+    health_endpoint = os.environ.get("AIP_HEALTH_ROUTE", settings.SERVER_HEALTH_ENDPOINT)
+    predict_endpoint = os.environ.get("AIP_PREDICT_ROUTE", settings.SERVER_PREDICT_ENDPOINT)
+
+    class HealthCheckResponse(BaseModel):
+        """
+        A class representing the health check response.
+        """
+        status: str = Field(description="Health check status")
+        task_name: str = Field(description="Task name")
+        task_id: str = Field(description="Task ID")
+        task_description: str = Field(description="Task description")
+
+
+    class TaskEndpointResponse(BaseModel):
+        """
+        A class representing the response for a task endpoint.
+        """
+        predictions: list[results_model] = Field(  # type: ignore
+            description="List of instances processed by the task.",
+        )
+
+    # Serve the task
+    app = FastAPI(
+        title=f"{task_name.replace('_', ' ').title()} API",
+    )
+
+    @app.get(
+        path=health_endpoint,
+        description="Health check endpoint",
+    )
+    async def health_check() -> HealthCheckResponse:
+        return HealthCheckResponse(
+            status="ok",
+            task_name=task_name,
+            task_id=task_pipeline.task_id,
+            task_description=task_pipeline.task_description,
+        )
+
+    @app.post(
+        path=predict_endpoint,
+        description=f"Run {task_name.replace('_', ' ').title()} workflow",
+    )
+    async def endpoint(parameters: TaskEndpointBody) -> TaskEndpointResponse:  # type: ignore
+        job_id = parameters.parameters.job_id
+        # Convert instances to a list of parameters
+        all_results = []
+        for instance in parameters.instances:
+            all_results.append(
+                task_pipeline(job_id, instance)
+            )
+        return TaskEndpointResponse(predictions=all_results)
+
+    # Run the FastAPI app
+    import uvicorn
+    uvicorn.run(
+        app,
+        host=settings.SERVER_HOST,
+        port=port,
+        log_level=settings.SERVER_LOG_LEVEL,
+    )
+
+
 """
 Entry point for running or registering a task.
 ==============================================
@@ -208,3 +331,15 @@ def register() -> None:
         raise ValueError("TASK_MODULE environment variable not set")
     task, Parameters, Results = import_task(task_module)
     register_task(task, Parameters, Results)
+
+
+def serve() -> None:
+    """
+    Serve the task pipeline. This is a placeholder function that can be used to serve the task
+    pipeline using a FastAPI web server.
+    """
+    task_module = os.environ.get("TASK_MODULE")
+    if task_module is None:
+        raise ValueError("TASK_MODULE environment variable not set")
+    task, Parameters, Results = import_task(task_module)
+    serve_task(task, Parameters, Results)

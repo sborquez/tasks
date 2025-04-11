@@ -1,0 +1,24 @@
+# Base stage - Install CUDA dependencies
+FROM pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime AS base
+
+# Install build essentials and git for repository handling
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Etc/UTC
+
+RUN apt-get update \
+    && apt-get install -y \
+        git \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . ./core
+RUN pip install --no-cache-dir ./core
+
+# Set needed environment variables
+ENV FIRESTORE_PROJECT_ID=
+ENV FIRESTORE_DATABASE=
+
+# Run the tasks
+WORKDIR /
+ENV TASK_COMMAND=tasks-run
+ENTRYPOINT ["/core/entrypoint.sh"]

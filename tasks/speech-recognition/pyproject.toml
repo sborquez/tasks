@@ -3,9 +3,9 @@ requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tasks-core"
+name = "tasks-speech-recognition"
 version = "0.1.0"
-description = "A core library for workflows tasks"
+description = "Speech recognition and spearker diarization tasks with WhisperX"
 requires-python = ">=3.10"
 authors = [
     { name = "Sebastián Bórquez", email = "sebastian.borquez.g@gmail.com" }
@@ -19,13 +19,8 @@ classifiers = [
 ]
 dynamic = ["dependencies"]
 
-[project.scripts]
-tasks-run = "tasks:run"
-tasks-register = "tasks:register"
-tasks-serve = "tasks:serve"
-
 [tool.setuptools]
-packages = ["tasks"]
+packages = ["speech_recognition"]
 package-dir = {"" = "."}
 
 [tool.setuptools.dynamic]

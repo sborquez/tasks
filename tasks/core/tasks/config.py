@@ -16,5 +16,11 @@ class Settings(BaseSettings):
     TASK_REGION: str | None = None
     TASK_JOB_NAME: str | None = None
 
+    # Default server settings
+    SERVER_HOST: str = "0.0.0.0"
+    SERVER_PORT: int = 5000
+    SERVER_LOG_LEVEL: str = "info"
+    SERVER_HEALTH_ENDPOINT: str = "/health"
+    SERVER_PREDICT_ENDPOINT: str = "/predict"
 
 settings = Settings()
