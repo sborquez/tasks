@@ -65,13 +65,26 @@ resource "google_artifact_registry_repository" "tasks_repository" {
   depends_on = [ google_project_service.project_services ]
 }
 
+## Bucket for Vertex AI Models weights
+resource "google_storage_bucket" "tasks_models_bucket" {
+  name     = "${var.project_id}-tasks-models-bucket"
+  location = var.region
+}
+
+resource "google_storage_bucket_iam_member" "tasks_models_bucket_access" {
+  bucket = google_storage_bucket.tasks_models_bucket.name
+  role   = "roles/storage.objectViewer"
+  # Default cloud build service account
+  member = "serviceAccount:${data.google_project.current.number}@cloudbuild.gserviceaccount.com"
+}
+
 ## Bucket for Cloud Run Jobs Results
 resource "google_storage_bucket" "tasks_results_bucket" {
   name     = "${var.project_id}-tasks-results-bucket"
   location = var.region
 }
 
-resource "google_storage_bucket_iam_member" "tasks_bucket_access" {
+resource "google_storage_bucket_iam_member" "tasks_results_bucket_access" {
   bucket = google_storage_bucket.tasks_results_bucket.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.tasks_jobs_service_account.email}"
