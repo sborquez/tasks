@@ -6,8 +6,6 @@ TASK_API_SA = "tasks-api-sa"
 TASK_JOBS_SA = "tasks-jobs-sa"
 TASK_API_IMAGE_NAME = "tasks-api-server"
 TASK_CORE_IMAGE_NAME = "tasks-core"
-TASKS = "hello-world"
-TASKS_MODULES = "hello_world"
 
 .PHONY: infra-apply build-and-push-api build-and-push-tasks
 
@@ -27,8 +25,8 @@ build-and-push-api:
 		gcloud builds submit --region=$(REGION) --config cloudbuild.yaml \
 			--substitutions=_PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION),_FIRESTORE_DATABASE=$(FIRESTORE_DATABASE),_REPOSITORY_NAME=$(REPOSITORY_NAME),_IMAGE_NAME=$(TASK_API_IMAGE_NAME),_SERVICE_ACCOUNT=$(TASK_API_SA),_SERVICE_ACCOUNT_JOBS=$(TASK_JOBS_SA)
 
-build-and-push-tasks:
+build-and-push-task-core:
 	@echo "Building and pushing Docker images for Tasks Jobs..."
-	cd ./tasks && \
+	cd ./tasks/core && \
 		gcloud builds submit --region=$(REGION) --config cloudbuild.yaml \
-			--substitutions=_PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION),_FIRESTORE_DATABASE=$(FIRESTORE_DATABASE),_REPOSITORY_NAME=$(REPOSITORY_NAME),_CORE_IMAGE=$(TASK_CORE_IMAGE_NAME),_SERVICE_ACCOUNT=$(TASK_API_SA),_TASKS=$(TASKS),_TASKS_MODULES=$(TASKS_MODULES)
+			--substitutions=_PROJECT_ID=$(PROJECT_ID),_REGION=$(REGION),_FIRESTORE_DATABASE=$(FIRESTORE_DATABASE),_REPOSITORY_NAME=$(REPOSITORY_NAME),_CORE_IMAGE=$(TASK_CORE_IMAGE_NAME)

@@ -32,6 +32,8 @@ async def execute_task(client: JobsAsyncClient, task: TaskDetails, job_id: str, 
     parameters_values["job_id"] = job_id
     job_parameters = _flatten_parameters(parameters_values)
 
+    # TODO: Add the logic to send it to the Vertex AI model endpoint
+
     # Start the Cloud Run Job
     run_request = RunJobRequest(
         name=full_job_name,  # Fully qualified job name
