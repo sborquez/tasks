@@ -1,0 +1,49 @@
+substitutions:
+  _PROJECT_ID: "your-project-id"
+  _REGION: "us-central1"
+  _REPOSITORY_NAME: "tasks-images"
+  _CORE_IMAGE: "tasks-core"
+  _VERSION: "0.1.0"
+
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Core Image CPU'
+    args: [
+      'build',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:cpu-latest',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:cpu-$_VERSION',
+      '-f', './Dockerfile.cpu', '.'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Core Image GPU'
+    args: [
+      'build',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:gpu-latest',
+      '-t', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:gpu-$_VERSION',
+      '-f', './Dockerfile.gpu', '.'
+    ]
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Core Image CPU Latest'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:cpu-latest']
+    waitFor:
+      - 'Build Core Image CPU'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Core Image CPU Version'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:cpu-$_VERSION']
+    waitFor:
+      - 'Build Core Image CPU'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Core Image CPU Latest'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:gpu-latest']
+    waitFor:
+      - 'Build Core Image GPU'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Core Image CPU Version'
+    args: ['push', '$_REGION-docker.pkg.dev/$_PROJECT_ID/$_REPOSITORY_NAME/$_CORE_IMAGE:gpu-$_VERSION']
+    waitFor:
+      - 'Build Core Image GPU'

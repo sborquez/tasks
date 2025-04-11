@@ -172,6 +172,7 @@ class TaskDocument(BaseModel):
 class Task(BaseModel):
     """Task Response, with the name, the description, the parameters schema and the result schema.
     """
+    id: str = Field(description="The Task Identifier")
     name: str = Field(description="The name of the task")
     description: str = Field(description="The description of the task")
 

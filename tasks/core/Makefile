@@ -12,6 +12,10 @@ build-python:
 	pip install -e .
 
 
-.PHONY: build-locally
-build-locally:
-	docker build --load -t $(CORE_IMAGE):$(CORE_IMAGE_TAG) .
+.PHONY: build-locally-cpu
+build-locally-cpu:
+	docker build --load -t $(CORE_IMAGE):cpu-$(CORE_IMAGE_TAG) -f Dockerfile.cpu .
+
+.PHONY: build-locally-gpu
+build-locally-gpu:
+	docker build --load -t $(CORE_IMAGE):gpu-$(CORE_IMAGE_TAG) -f Dockerfile.gpu .

@@ -1,6 +1,6 @@
 
 # Base stage - Install Python dependencies and build essentials
-ARG CORE_IMAGE=tasks-core:latest
+ARG CORE_IMAGE=tasks-core:cpu-latest
 ARG TASK_MODULE="hello_world"
 FROM $CORE_IMAGE AS base
 
