@@ -1,11 +1,15 @@
 
-# **Workflows - Automated Git and GitLab Workflow Orchestration**
+# **Workflows - Automated Tasks with Python**
 
 This project, named **Workflows**, implements a framework to automate workflows with Python.
 
 The workflows are designed to handle various sequential steps to achieve a task such as pushing features, creating pull requests, and generating image, etc. These workflows run as **Cloud Run Jobs** on Google Cloud, or asynchronously triggered **Vertex AI Endpoints** (for GPU tasks).
 
-A API server is included to handle the available workflows and their parameters and results schemas, so you can integrate them into your own applications. The API server is used to trigger the workflows and manage their execution and results.
+An API server is included to handle the available workflows and their parameters and results schemas, so you can integrate them into your own applications. The API server is used to trigger the workflows and manage their execution and results.
+
+      Note: The Vertex AI Endpoints are not yet implemented, but the code is ready for creating a HTTP endpoint.
+      We only lack the deployment of the model to the endpoint and registration of the endpoint in Firestore.
+
 
 ---
 
@@ -162,6 +166,19 @@ Suppose you want to create a new task called `my-task`:
    ```
    You should be able to see the task registered in Firestore and ready to be used in workflows. Use the API server to trigger the task and check the results.
 
+---
+
+## **How does it work?**
+
+1. Task abstraction
+   1. Parameters and Results schemas
+   2. task and step decorators
+   3. Task registration
+   4. Task execution
+2. Task flow with the API server
+   1. Discovery
+   2. Execution
+   3. Results
 ---
 
 ## **License**
