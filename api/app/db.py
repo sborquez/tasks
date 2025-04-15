@@ -68,7 +68,17 @@ async def list_user_tasks(client: AsyncClient, user_email: str) -> list[Task]:
     return tasks
 
 
-async def get_task_details(client: AsyncClient, task_id: str) -> TaskDetails:
+async def get_task_details(client: AsyncClient, task_id: str, user_email: str) -> TaskDetails:
+    # Find user
+    user_ref = client.collection(USERS_COLLECTION).document(user_email)
+    user_doc = await user_ref.get()
+    if not user_doc.exists:
+        raise ValueError(f"User {user_email} not found")
+    user = _validate_firestore_document(user_doc, UserDocument)
+    if task_id not in user.tasks:
+        raise ValueError(f"User {user_email} does not have access to task {task_id}")
+
+    # Get task
     task_ref = client.collection(TASKS_COLLECTION).document(task_id)
     task_doc = await task_ref.get()
     if not task_doc.exists:

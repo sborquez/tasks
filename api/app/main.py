@@ -20,6 +20,7 @@ from app.schema_validation import (
 )
 from app.models import (
     Task,
+    TaskDetails,
     JobCreate,
     JobResult,
 )
@@ -43,6 +44,13 @@ async def get_tasks(x_user_email: str = Depends(get_current_user), db: Firestore
     return tasks
 
 
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: str, x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep) -> TaskDetails:
+    """Get the tasks for a user"""
+    task = await get_task_details(db, task_id, x_user_email)
+    return task
+
+
 @app.post("/execute/{task_id}")
 async def execute(task_id: str, parameters: dict | None, x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep, run: CloudRunJobClient = CloudRunJobClientDep) -> JobCreate:
     """Execute a task for a user, only if the user has access to it"""
@@ -50,7 +58,7 @@ async def execute(task_id: str, parameters: dict | None, x_user_email: str = Dep
         raise HTTPException(status_code=404, detail="Task not found")
 
     # Validate parameters
-    task = await get_task_details(db, task_id)
+    task = await get_task_details(db, task_id, x_user_email)
     try:
         parameters_ = parameters or {}
         parameters_model = validate_with_model_schema(task.parameters_schema, parameters_)
@@ -74,6 +82,7 @@ async def execute(task_id: str, parameters: dict | None, x_user_email: str = Dep
     )
     return job_create
 
+
 @app.get("/jobs/{job_id}")
 async def get_job(job_id: str, x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep) -> JobResult:
     """Get the status of a job"""
@@ -81,6 +90,6 @@ async def get_job(job_id: str, x_user_email: str = Depends(get_current_user), db
         raise HTTPException(status_code=404, detail="Job not found")
     try:
         job_status = await get_job_status(db, job_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Job not found")
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid job, {e}")
     return job_status
