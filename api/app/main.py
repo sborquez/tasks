@@ -1,4 +1,5 @@
-from fastapi import FastAPI, Depends, Header, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Security
+from fastapi.security import APIKeyHeader
 from google.cloud.firestore import AsyncClient as FirestoreClient
 from google.cloud.run_v2 import JobsAsyncClient as CloudRunJobClient
 
@@ -9,6 +10,7 @@ from app.db import (
     user_has_access_to_job,
     get_job_status,
     get_task_details,
+    get_user_email_from_api_key,
     create_job,
 )
 from app.tasks import (
@@ -31,11 +33,21 @@ app = FastAPI()
 FirestoreClientDep = Depends(get_firestore_client)
 CloudRunJobClientDep = Depends(get_jobs_client)
 
-async def get_current_user(x_user_email: str = Header(None)):
-    if not x_user_email:
-        raise HTTPException(status_code=400, detail="User email header missing")
-    return x_user_email
+x_user_api_key_header = APIKeyHeader(
+    name="X-User-Api-Key",
+)
 
+async def user_email_from_token(x_user_api_key: str) -> str:
+    """Get the user email from the token id"""
+    db = await get_firestore_client()
+    return await get_user_email_from_api_key(db, x_user_api_key)
+
+async def get_current_user(x_user_api_key: str = Security(x_user_api_key_header)) -> str:
+    """Get the current user from the headers"""
+    if not (x_user_api_key):
+        raise HTTPException(detail="User API Key not provided", status_code=401)
+    x_user_email = await user_email_from_token(x_user_api_key)
+    return x_user_email
 
 @app.get("/tasks")
 async def get_tasks(x_user_email: str = Depends(get_current_user), db: FirestoreClient = FirestoreClientDep) -> list[Task]:

@@ -10,7 +10,7 @@ os.environ["FIRESTORE_EMULATOR_HOST"] = "localhost:8080"
 from app.db import get_firestore_client  # type: ignore
 
 users = [
-    {"id": "test@user.com", "tasks": ["task1"]},
+    {"id": "test@user.com", "tasks": ["task1"], "api_key": "test_api_key"},
 ]
 
 class Parameters(BaseModel):

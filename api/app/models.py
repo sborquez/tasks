@@ -27,7 +27,7 @@ class UserDocument(BaseModel):
     """
     id: str = Field(description="User email, the Firestore document ID")
     tasks: list[str] = Field(description="List of task IDs the user has access to")
-
+    api_key: str = Field(description="The API token of the user, used for authentication")
 
 
 """
@@ -183,6 +183,5 @@ class Task(BaseModel):
 
 class TaskDetails(Task):
     """Task details with the ID and the Cloud Run job name"""
-    id: str = Field(description="The Firestore document ID")
 
     uri: str = Field(description="Identifier to the task location. e.g. the Cloud Run job name. With the format 'projects/{project_id}/locations/{location}/jobs/{job_id}'")

@@ -38,6 +38,18 @@ async def get_firestore_client() -> AsyncClient:
     return AsyncClient()
 
 
+async def get_user_email_from_api_key(client: AsyncClient, token: str) -> str:
+    # Find user with api_key equal to token
+    # Vanilla approach, using the api_key as a field
+    user_ref = client.collection(USERS_COLLECTION).where("api_key", "==", token)
+    user_docs = await user_ref.get()
+    if not user_docs:
+        raise ValueError(f"User with token {token} not found")
+    user_doc = user_docs[0]
+    user = _validate_firestore_document(user_doc, UserDocument)
+    return user.id
+
+
 async def list_user_tasks(client: AsyncClient, user_email: str) -> list[Task]:
     # Find user
     user_ref = client.collection(USERS_COLLECTION).document(user_email)
